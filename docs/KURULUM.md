@@ -36,38 +36,53 @@ python scripts\veri_denetimi.py      # rapor: docs\veri_denetimi.md
 
 **Eğitim:**
 ```powershell
-yolo train model=models/yolo11n.pt data=data/levha/data_temiz.yaml imgsz=640 epochs=150 patience=30 fliplr=0.0 batch=-1 workers=4 cache=ram name=v1
+python scripts\kucult.py   # bir kez: data\levha -> data\levha640 (640 px kopya, ~20 s)
+yolo train model=models/yolo11n.pt data=data/levha640/data_temiz.yaml imgsz=640 epochs=150 time=1.6 patience=30 fliplr=0.0 batch=16 workers=3 name=v1
 ```
+- `levha640`: Görüntüler bir kez 640 px'e küçültülüyor; Ultralytics da eğitimde aynı küçültmeyi yapıyor, yani sonuç aynı. Neden gerekli: darboğaz 1080p JPEG'lerin her epoch'ta yeniden açılması. `cache=ram` bunu çözüyor ama **Windows'ta önbellek her işçi sürece ayrı ayrı kopyalanıyor** (3,2 GB × işçi sayısı), bu yüzden 16 GB RAM'e sığmıyor. Küçük JPEG'ler önbelleksiz de hızlı okunuyor.
 - `data_temiz.yaml`: erken durdurma ve en iyi modelin seçimi sızıntısız valid ile yapılır (bkz. `docs/veri_denetimi.md`).
-- `cache=ram`: görseller 640'a küçültülüp belleğe alınır (~3,2 GB RAM). Ölçüm (28 Ekim): önbelleksiz ~21 s, önbellekle ~4,5 s (verinin %10'unda bir epoch). Tam veride epoch başına ~50 s, yani 150 epoch en fazla ~2 saat.
-- `batch=-1`: AutoBatch 4 GB VRAM için batch 11 seçiyor.
+- `workers=3`: Windows'ta her işçi ayrı bir Python süreci ve süreç başına ~0,6 GB RAM tutuyor. Doğrulama aşaması işçi sayısını ikiye katlıyor. Ölçüm (29 Ekim): `workers=6` → 18 süreç, 11,7 GB, boş RAM 0,7 GB'a düştü. `workers=3` → 11 süreç, ~6,6 GB.
+- `time=1.6`: eğitimi 1,6 saatle sınırlar; Ultralytics epoch sayısını ve öğrenme hızı planını bu süreye göre ayarlar.
+- `batch=16`: 4 GB VRAM'e rahat sığıyor (batch 11'de 1,6 GB kullanılmıştı).
 - Çıktılar `ml\runs\detect\<name>\` altına yazılır. `project=` parametresi **verilmemeli**, yoksa klasörler iç içe geçer.
 - Eğitim sırasında laptop prizde ve Armoury Crate'te Turbo/Performans modunda olmalı.
 
+**Yarıda kalan eğitime devam** (her epoch sonunda `last.pt` kaydedilir; bilgisayar kapatılınca en fazla yarım epoch kaybolur):
+```powershell
+yolo train resume model=runs/detect/v1/weights/last.pt
+```
+Ayarlar (`workers`, `batch` vb.) kayıttan otomatik alınır.
+
+⚠️ **Devam ederken `time=` kullanma.** Ultralytics `time` modunda toplam epoch sayısını "süre ÷ devamdan beri ölçülen ortalama epoch süresi" diye hesaplıyor ve daha önce bitmiş epoch'ları saymıyor. 28 Ekim'de 47. epoch'tan `time=1.1` ile devam edilince ilk epoch (açılış dahil 102 s) yüzünden hedef 39 çıktı ve eğitim hemen durdu; öğrenme hızının düşürüldüğü son aşama hiç çalışmadı. Kısa ve öngörülebilir bir bitiş için sabit `epochs` ile ince ayar eğitimi yapılır:
+```powershell
+yolo train model=runs/detect/v1/weights/best.pt data=data/levha640/data_temiz.yaml imgsz=640 epochs=20 optimizer=AdamW lr0=0.0004 warmup_epochs=1 close_mosaic=10 fliplr=0.0 batch=16 workers=3 name=v2
+```
+
 **Test sonuçları (eğitimden sonra, iki test setinde):**
 ```powershell
-yolo val model=runs/detect/v1/weights/best.pt data=data/levha/data.yaml split=test        # orijinal test (Roboflow ile kıyas)
-yolo val model=runs/detect/v1/weights/best.pt data=data/levha/data_temiz.yaml split=test  # temiz test (gerçek başarı)
+yolo val model=runs/detect/v1/weights/best.pt data=data/levha640/data.yaml split=test        # orijinal test (Roboflow ile kıyas)
+yolo val model=runs/detect/v1/weights/best.pt data=data/levha640/data_temiz.yaml split=test  # temiz test (gerçek başarı)
 ```
 
 **Telefon için `.tflite` dışa aktarma:**
 ```powershell
-yolo export model=runs/detect/v1/weights/best.pt format=saved_model imgsz=640
-# -> runs/detect/v1/weights/best_saved_model/best_float32.tflite ve best_float16.tflite
-yolo export model=runs/detect/v1/weights/best.pt format=saved_model imgsz=640 quantize=8 data=data/levha/data.yaml
-# -> ek olarak INT8 varyantları (kalibrasyon için veri setini kullanır)
+python scripts\export_tflite.py runs/detect/v2/weights/best.pt
+# -> runs/detect/v2/weights/best_tflite/best_float32.tflite ve best_float16.tflite
 ```
-Sınıf isimleri `.tflite` dosyasının içine gömülür (`metadata.json`), yani eklenti isimleri dosyadan okur.
+⚠️ `yolo export ... format=saved_model` ile çıkan `.tflite` dosyalarını **kullanma**. Ultralytics 8.4.191'de bu yol kutu koordinatlarını piksel (0–640) olarak veriyor, ama `.tflite` okuyucuları (Ultralytics ve Flutter eklentisi) 0–1 arası normalize koordinat bekliyor. Sonuç mAP 0 olur (28 Ekim'de yaşandı). Betik ONNX çıkışına "xywh ÷ 640" ekleyip yeniden çeviriyor ve sınıf isimlerini (`metadata.json`) dosyaya gömüyor. INT8 varyantı betikte henüz yok; gerekirse (Hafta 1 hız ölçümüne göre) eklenecek.
 
-**`.tflite` modelini Windows'ta doğrulama:**
+**`.tflite` modelini Windows'ta doğrulama** (`.pt` ile aynı puanı almalı):
 ```powershell
-yolo val model=runs/detect/v1/weights/best_saved_model/best_float32.tflite data=data/levha/data.yaml split=test
+yolo val model=runs/detect/v2/weights/best_tflite/best_float16.tflite data=data/levha640/data_temiz.yaml split=test
 ```
+
+**Windows betiklerinde** (`.py`) ana kod `if __name__ == "__main__":` içinde olmalı. Aksi hâlde DataLoader işçileri betiği baştan çalıştırır ve süreç kilitlenir (28 Ekim'de yaşandı).
 
 **Windows uygulaması için ONNX dışa aktarma (Hafta 6):**
 ```powershell
-yolo export model=runs/detect/v1/weights/best.pt format=onnx imgsz=640
+yolo export model=runs/detect/v2/weights/best.pt format=onnx imgsz=640
 ```
+(ONNX çıkışı piksel koordinatlıdır; Windows uygulamasında Ultralytics'in son işlemesi bu şekilde bekler.)
 
 **Telefonda çalıştırma (`mobile\` klasöründe):**
 ```powershell

@@ -97,13 +97,30 @@ Ortam kuruldu ve araçlar doğrulandı (bkz. `docs/KURULUM.md`):
 **B planı:** Model eklentide çalışmazsa eklentinin resmi desteklediği YOLO26n'e geçilir. FPS düşükse sırayla şunlar denenir: GPU → INT8 → imgsz 480 → YOLO26n.
 
 ### Hafta 2 — 5–11 Kasım: Eğitim + dışa aktarma
-1. Eğitim 1: `yolo11n.pt`, `data=data/levha/data_temiz.yaml` (erken durdurma sızıntısız valid ile yapılsın), `imgsz=640`, `epochs=150`, `patience=30`, **`fliplr=0.0`**, `batch=-1`, `workers=4`, `cache=ram`. Tahmini süre en fazla ~2 saat (epoch başına ~50 s, ölçüldü).
+1. Eğitim 1: `yolo11n.pt`, `data=data/levha640/data_temiz.yaml` (640 px kopya; erken durdurma sızıntısız valid ile yapılsın), `imgsz=640`, `time=1.6` (saat), `patience=30`, **`fliplr=0.0`**, `batch=16`, `workers=3`. Komut ve gerekçeler `docs/KURULUM.md`'de.
 2. Değerlendirme: sınıf bazlı mAP ve karışıklık matrisi. Sonuç **iki test setinde** raporlanır: orijinal test (Roboflow'un %85,1'iyle kıyas için) ve temiz test (gerçek başarı).
 3. Dışa aktarma (Windows): `format=saved_model` FP32 ve FP16 üretir; `quantize=8 data=data/levha/data.yaml` eklenince INT8 varyantları da çıkar. Doğruluk Windows'ta `yolo val` ile ölçülür (`.tflite` doğrudan çalıştırılabiliyor); hız telefonda ölçülür. En iyi varyant seçilir.
 4. Sürümler sabit tutulur (`ml/requirements.txt` ✔, `mobile/pubspec.lock`); çalışan bir şey olduğunda paket güncellenmez.
 
 **Kapı:** Orijinal test setinde mAP50 ≥ 0,80 **ve** telefonda ≥ 5 FPS. Temiz test sonucu ayrıca raporlanır (sızıntı olmadığı için daha düşük çıkması beklenir).
 **B planı:** mAP düşükse veri denetimindeki sorunlu sınıflara bak; daha uzun eğitim veya imgsz artışı denenir. Hız düşükse INT8 veya daha küçük imgsz.
+
+**Durum: eğitim 28 Ekim'de erken tamamlandı ✔** (telefondaki hız kapısı Hafta 1'deki ölçümü bekliyor)
+- **v1:** yolo11n.pt'den 47 epoch. Bilgisayar kapatılacağı için bir kez durdurulup devam ettirildi. İkinci devamda `time=1.1` verilince erken bitti (bkz. risk 65); en iyisi 42. epoch.
+- **v2:** v1'in en iyisinden 20 epoch'luk bitirme eğitimi (`AdamW lr0=0.0004`, son 10 epoch mozaik kapalı). Telefona gidecek model bu: `ml/runs/detect/v2/weights/best.pt`.
+- `.tflite`: `scripts/export_tflite.py` → `best_tflite/best_float16.tflite` (5,1 MB).
+
+| Model | Test seti | mAP50 | mAP50-95 |
+|---|---|---|---|
+| v1 best.pt | orijinal / temiz | 0,876 / 0,883 | 0,699 / 0,706 |
+| **v2 best.pt** | **orijinal / temiz** | **0,900 / 0,896** | **0,730 / 0,726** |
+| v2 FP16 `.tflite` | temiz | 0,897 | 0,725 |
+
+- Orijinal test setinde **0,900 ≥ 0,80** (kapı ✔; Roboflow'un aynı setteki modeli 0,851). Temiz testte sonuç neredeyse aynı, yani sızıntı bu modelin skorunu şişirmemiş.
+- `.tflite` dönüşüm kaybı 0,1 puanın altında (başarı ölçütü 1: ≤ 2 puan ✔).
+- Ezberleme yok: doğrulama kaybı sona kadar düştü.
+- **Zayıf sınıflar** (temiz test AP50): pedestrian_info 0,55 (precision 0,53, başka mavi levhaları bu sınıf sanıyor), speed70 0,70 (recall 0,53, 50 ya da 30 sanıyor), speed30 0,79, giveway 0,83. Sık karışmalar: 70→50, okul geçidi ↔ yaya levhaları, girilmez→dur, sağa dönülmez→sola dönülmez (2 kez).
+- Sonraki adımlar: uygulamada hız levhaları ve pedestrian_info için daha yüksek güven eşiği (Hafta 3); bu sınıflardan kendi fotoğraflarımızı ekleyip yeniden eğitmek (Hafta 4).
 
 ### Hafta 3 — 12–18 Kasım: Mobil uygulama (ilk çalışan sürüm)
 1. YOLOView + eğitilmiş model (`assets/models/`) + DetectionFilter + CooldownManager + AlertQueue + ses dosyaları.
@@ -163,7 +180,7 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 | 16 | Veri sızıntısı | 🔧 | Bulundu ve ayıklandı ✔: valid/test'in ~%45'i train'deki görsellerin neredeyse aynısı (algısal hash ≤ 12, gözle doğrulandı). `data_temiz.yaml` → temiz valid 296, temiz test 308 görsel. Bu setlerde sınıf başına 7–37 kutu kaldığı için sınıf bazlı skorlar gürültülü olabilir. | H1 |
 | 17 | Yetersiz doğrulama | 🔧 | Ayrı ve hiç dokunulmamış test seti; ayrıca kendi yol videolarımızla gerçek dünya testi. | H2, H4 |
 | 18 | Erken durdurma / aşırı öğrenme | 🔧 | `patience=30`, `epochs=150`; loss eğrileri izlenir; `best.pt` val mAP'e göre seçilir. | H2 |
-| 19 | Eğitim donanımı yetersizliği | 🔧 | Ölçüldü ✔: `batch=-1` 4 GB VRAM için batch 11 seçiyor. Darboğaz GPU değil, 1080p JPEG'lerin her epoch'ta yeniden açılması. `cache=ram` (~3,2 GB RAM) bunu ~5 kat hızlandırıyor (tam veride epoch başına ~50 s). Laptop prize takılı ve Armoury Crate'te Turbo modda olmalı. | H2 |
+| 19 | Eğitim donanımı yetersizliği | 🔧 | Ölçüldü ✔: `batch=-1` 4 GB VRAM için batch 11 seçiyor. Darboğaz GPU değil, 1080p JPEG'lerin her epoch'ta yeniden açılması. `cache=ram` bunu ~5 kat hızlandırıyor, ama Windows'ta önbellek her işçi sürece kopyalandığı için RAM'e sığmıyor. Çözüm: veri seti bir kez 640 px'e küçültülüyor (`scripts/kucult.py`) ve önbelleksiz okunuyor. İşçi süreçleri de RAM yiyor (süreç başına ~0,6 GB; 6 işçide boş RAM 0,7 GB'a düştü), bu yüzden `workers=3`. Laptop prize takılı ve Armoury Crate'te Turbo modda olmalı. | H2 |
 | 20 | Eğitim ile gerçek kamera arasındaki fark | 🔧📏 | Eğitimdeki imgsz ile çıkarımdaki imgsz aynı tutulur; kendi videolarımızla doğrulanır. Somut kanıt bulundu: risk 63. | H2, H4 |
 
 ### Dışa aktarma ve mobil entegrasyon
@@ -228,6 +245,8 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 | 61 | Dışa aktarma paketleri (TensorFlow, onnx2tf) eğitimle aynı ortamda. TensorFlow kurulumu `protobuf` ve `onnx` sürümlerini düşürdü. Ayrıca Ultralytics eksik paketi dışa aktarma *sırasında* kurmaya kalkarsa süreç çökebilir. | 🔧 | Paketler önceden ve sabit sürümle kuruldu (`ml/requirements.txt`) ✔. torch ve GPU eğitimi etkilenmedi ✔. Paketler `pip install -U` ile güncellenmeyecek. |
 | 62 | Ultralytics varsayılan olarak anonim kullanım verisi gönderiyor (`sync=True`); bu, "tam çevrimdışı" iddiasıyla çelişir. | 🔧 | `yolo settings sync=False` yapıldı ✔. |
 | 63 | **Veri setinin büyük kısmı Google Street View ekran görüntüsü** (kenarlarda tarayıcı, görev çubuğu ve mini harita var). Bu görüntüler net ve bulanıklıksız; telefon kamerasının ön camdan çektiği görüntüye benzemiyor. Model tarayıcı arayüzü gibi alakasız ipuçlarını da öğrenebilir. | 🔧📏 | Eğitimde bulanıklık, renk ve parlaklık artırımları kullanılır. H4'te kendi telefon görüntülerimizden zor örnekler etiketlenip eğitime eklenir. Temiz testin yanında kendi videolarımızla ayrıca ölçüm yapılır. |
+| 64 | *(Yaşandı)* `format=saved_model` ile çıkan `.tflite`, kutu koordinatlarını piksel olarak veriyor; okuyucular ise normalize koordinat bekliyor. Sonuç: mAP 0. | 🔧 | `scripts/export_tflite.py` ONNX çıkışına "xywh ÷ 640" ekleyip yeniden çeviriyor ✔. Temiz testte `.tflite` 0,897, `.pt` 0,896. Eklentinin normalize koordinatla doğru çizdiği Hafta 1'de telefonda doğrulanacak. |
+| 65 | *(Yaşandı)* `resume` ile `time=` birlikte kullanılınca Ultralytics bitmiş epoch'ları saymıyor ve eğitimi hemen bitiriyor; öğrenme hızını düşürme aşaması atlanıyor. | 🔧 | Devam ederken `time` verilmiyor. Bitirme aşaması sabit epoch'lu ince ayar eğitimiyle (v2) yapıldı ✔: mAP50-95 0,716 → 0,732. |
 
 ---
 
