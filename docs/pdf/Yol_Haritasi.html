@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Trafik Levhası Sürücü Asistanı — Yol Haritası</title>
+<style>
+  @page {
+    size: A4; margin: 15mm 14mm 16mm 14mm;
+    @bottom-left { content: "Trafik Levhası Sürücü Asistanı — Yol Haritası"; font: 8pt "Segoe UI", Arial; color: #94a3b8; }
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "Segoe UI", Arial; color: #94a3b8; }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.3pt; line-height: 1.45; color: #1f2937; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4px; color: #12304f; }
+  h2 { font-size: 14.5pt; color: #12304f; border-left: 5px solid #2563eb; padding: 2px 0 2px 10px; margin: 22px 0 10px; break-after: avoid; }
+  h3 { font-size: 11.5pt; color: #12304f; margin: 14px 0 6px; break-after: avoid; }
+  p { margin: 5px 0; }
+  ul { margin: 4px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  .new-page { break-before: page; }
+  .subtitle { font-size: 12pt; color: #475569; margin-bottom: 14px; }
+  .meta { font-size: 9.5pt; color: #64748b; }
+  .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: #f8fafc; break-inside: avoid; }
+  .box.blue { background: #eff6ff; border-color: #93c5fd; }
+  .box.green { background: #f0fdf4; border-color: #86efac; }
+  .box.amber { background: #fffbeb; border-color: #fcd34d; }
+  .box.red { background: #fef2f2; border-color: #fca5a5; }
+  .box h3 { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.4pt; }
+  th { background: #12304f; color: #fff; text-align: left; padding: 5px 7px; font-weight: 600; }
+  td { padding: 5px 7px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  tr { break-inside: avoid; }
+  tbody tr:nth-child(even) td { background: #f8fafc; }
+  td.num { width: 26px; color: #64748b; font-weight: 600; }
+  td.when { width: 58px; white-space: nowrap; color: #475569; }
+  td.st { width: 108px; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 8.3pt; font-weight: 600; white-space: nowrap; }
+  .t-ek { background: #dcfce7; color: #166534; }
+  .t-biz { background: #dbeafe; color: #1e40af; }
+  .t-olc { background: #ffedd5; color: #9a3412; }
+  .t-sin { background: #e5e7eb; color: #374151; }
+  .ok { color: #15803d; font-weight: 700; }
+  .flow { margin: 8px 0 4px; }
+  .step { border: 1.5px solid #2563eb; border-radius: 8px; padding: 6px 12px; background: #eff6ff; break-inside: avoid; }
+  .step b { color: #12304f; }
+  .step small { color: #475569; }
+  .arrow { text-align: center; color: #2563eb; font-size: 13pt; line-height: 1.1; }
+  .week { border: 1px solid #cbd5e1; border-radius: 8px; margin: 10px 0; break-inside: avoid; overflow: hidden; }
+  .week .hd { background: #12304f; color: #fff; padding: 5px 12px; font-weight: 600; }
+  .week .hd span { font-weight: 400; opacity: .85; }
+  .week .bd { padding: 6px 12px 8px; }
+  .week .gate { background: #f0fdf4; border-top: 1px solid #bbf7d0; padding: 5px 12px; }
+  .week .planb { background: #fffbeb; border-top: 1px solid #fde68a; padding: 5px 12px; }
+  .done .hd { background: #15803d; }
+  .check li { list-style: none; margin-left: -18px; }
+  .check li::before { content: "☐  "; color: #2563eb; font-weight: 700; }
+  .legend .tag { margin-right: 4px; }
+  .footer-note { font-size: 8.8pt; color: #64748b; margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- ============ KAPAK ============ -->
+<h1>Trafik Levhası Sürücü Asistanı</h1>
+<div class="subtitle">Yol Haritası, Kurulum Durumu ve Olası Sorunların Çözüm Planı</div>
+<div class="meta">Hazırlanma: 28 Ekim 2026 &nbsp;·&nbsp; Süre: ~6 hafta (hedef bitiş en geç 9 Aralık 2026) &nbsp;·&nbsp; İlk platform: Android</div>
+
+<div class="box blue">
+  <h3>Bu belge ne anlatıyor?</h3>
+  <p>Projeyi <b>6 haftada</b>, adım adım nasıl bitireceğimizi anlatıyor. Belgede şunlar var:</p>
+  <ul>
+    <li>verilen kararlar ve nedenleri,</li>
+    <li>bugün bilgisayara kurulanlar ve yapılan testler,</li>
+    <li>haftalık iş planı: her hafta ne yapılacak, hafta sonunda ne çalışıyor olmalı, çalışmazsa ne yapılacak,</li>
+    <li>çıkabilecek <b>62 sorunun</b> her biri için önlem.</li>
+  </ul>
+  <p>Teknik terimlerin kısa açıklamaları belgenin sonundaki <b>Küçük Sözlük</b> bölümünde.</p>
+</div>
+
+<div class="box green">
+  <h3>Kısaca bugünkü durum</h3>
+  <ul>
+    <li><span class="ok">✓</span> Gerekli bütün programlar kuruldu ve test edildi.</li>
+    <li><span class="ok">✓</span> Ekran kartıyla (RTX 3050) deneme eğitimi çalıştı.</li>
+    <li><span class="ok">✓</span> Projedeki en büyük risk olan "modeli telefon formatına (.tflite) çevirme" bilgisayar tarafında başarıyla denendi. Çevrilen model, orijinaliyle aynı nesneleri buldu.</li>
+    <li><span class="ok">✓</span> Boş Android uygulaması, kullanacağımız yapay zeka eklentisiyle birlikte derlendi.</li>
+    <li>Sıradaki adım: modeli <b>gerçek telefonda</b> çalıştırıp hızını ölçmek (1. hafta).</li>
+  </ul>
+</div>
+
+<!-- ============ KARARLAR ============ -->
+<h2>1. Bir Bakışta Kararlar</h2>
+<table>
+  <thead><tr><th style="width:22%">Konu</th><th style="width:33%">Karar</th><th>Neden</th></tr></thead>
+  <tbody>
+    <tr><td>İlk platform</td><td>Android telefon (Flutter ile)</td><td>Test telefonu Android. iPhone uygulaması için Mac gerekir, bu bilgisayar Windows.</td></tr>
+    <tr><td>Yapay zeka modeli</td><td><b>YOLO11n</b> (yedek: YOLO26n)</td><td>YOLO11 ve YOLOv8 için internette çok örnek ve destek var. İkisi aynı çıktı biçimini kullandığı için v8 örnekleri de işimize yarar.</td></tr>
+    <tr><td>Telefonda kamera ve model</td><td>Hazır resmi eklenti: <b>ultralytics_yolo</b></td><td>Kamera görüntüsünü alma, modele verme, sonuçları ayıklama gibi zor kısımları eklenti hazır yapıyor. Biz uyarı mantığına ve sese odaklanıyoruz.</td></tr>
+    <tr><td>Hedef telefon</td><td>Redmi Note 8 seviyesi</td><td>Orta-alt seviye bir telefon. Bunda akıcı çalışırsa daha güçlü telefonlarda da çalışır.</td></tr>
+    <tr><td>Veri seti</td><td>Hootbu – Traffic-Sign-Recognition-V2-Turkiye (Roboflow)</td><td>Türkiye levhaları, 5.527 fotoğraf, 20 levha türü. Ücretsiz; kaynak gösterilmesi şartıyla kullanılabilir (CC BY 4.0).</td></tr>
+    <tr><td>Eğitim nerede?</td><td>Bu bilgisayar (Windows + RTX 3050)</td><td>Ekran kartı eğitimi saatler içinde bitirir, internet gerekmez.</td></tr>
+    <tr><td>Telefon formatına çevirme</td><td>Windows içindeki Linux'ta (WSL2 Ubuntu)</td><td>Bu çevirme işlemi Windows'ta desteklenmiyor, yalnızca Linux'ta çalışıyor.</td></tr>
+    <tr><td>Sesli uyarı</td><td>Önceden kaydedilmiş Türkçe ses dosyaları</td><td>Anında çalar, internet gerekmez.</td></tr>
+  </tbody>
+</table>
+<div class="box amber">
+  <b>Proje önerisinden iki küçük sapma var.</b> Raporda gerekçesiyle yazılmalı:
+  <ul>
+    <li>Öneride "camera + tflite_flutter + Isolate" yazıyor. Bunların yerine resmi eklenti kullanılıyor. Eklenti modeli zaten ayrı bir arka plan iş parçacığında çalıştırıyor, yani "arayüz donmasın" hedefi yine karşılanıyor.</li>
+    <li>Öneride eğitim için Linux Mint yazıyor. Eğitim Windows'ta yapılıyor; çevirme işi Windows içindeki Linux'ta (WSL2).</li>
+  </ul>
+</div>
+
+<!-- ============ MİMARİ ============ -->
+<h2 class="new-page">2. Sistem Nasıl Çalışacak?</h2>
+<p>Telefon arka kamerayla yolu izler. Her karede şu adımlar sırayla çalışır:</p>
+<div class="flow">
+  <div class="step"><b>1. Kamera</b> <small>(eklenti)</small><br>Arka kamera 720p görüntü verir. Model meşgulse eski kareler beklemeden atılır, her zaman <b>en yeni kare</b> işlenir.</div>
+  <div class="arrow">▼</div>
+  <div class="step"><b>2. Yapay zeka modeli</b> <small>(eklenti, telefonun kendi hızlı kodunda)</small><br>Görüntü modele verilir ve model levhaların yerini ve türünü bulur. Önce telefonun ekran kartı denenir, olmazsa işlemci kullanılır.</div>
+  <div class="arrow">▼</div>
+  <div class="step"><b>3. Filtre</b> <small>(bizim kodumuz)</small><br>Model emin değilse (güven %50'nin altındaysa) ya da levha çok küçük görünüyorsa sonuç dikkate alınmaz. Bir levha ancak <b>son 5 karenin en az 3'ünde</b> görüldüyse "gerçek" sayılır. Bu kural yanlış alarmları büyük ölçüde engeller.</div>
+  <div class="arrow">▼</div>
+  <div class="step"><b>4. Tekrar önleme (cooldown)</b> <small>(bizim kodumuz)</small><br>Aynı levha için uyarı verildiyse <b>en az 5 saniye</b> tekrar uyarı verilmez. Levha ekrandan çıkıp <b>2 saniye</b> görünmezse aynı tür bir sonraki levha için yeniden uyarı hakkı doğar.</div>
+  <div class="arrow">▼</div>
+  <div class="step"><b>5. Ses sırası</b> <small>(bizim kodumuz)</small><br>Aynı anda yalnızca bir ses çalar. Önemli uyarılar ("Dur", "Girilmez" gibi) sırada öne geçer. Sırada en fazla 2 uyarı bekleyebilir; 3 saniyeden eski uyarılar atılır.</div>
+  <div class="arrow">▼</div>
+  <div class="step"><b>6. Uyarı</b><br>Türkçe ses çalar; o sırada çalan müzik otomatik olarak kısılır. Ekranda da büyük bir uyarı şeridi çıkar.</div>
+</div>
+<p><b>Neden ayrıca "Isolate" yok?</b> Ağır iş (kamera ve model) eklentinin kendi arka plan kodunda yapılıyor. Flutter tarafına her karede yalnızca birkaç satırlık bir sonuç listesi geliyor, bu da arayüzü yormuyor.</p>
+
+<!-- ============ BUGÜN YAPILANLAR ============ -->
+<h2>3. Bugün Kurulanlar ve Yapılan Testler</h2>
+<p>Bilgisayarda zaten kurulu olanlar (Flutter, Java, Git, VS Code) <b>yeniden kurulmadı</b>. Sadece eksikler eklendi.</p>
+<table>
+  <thead><tr><th style="width:30%">Araç</th><th>Ne işe yarıyor?</th><th style="width:16%">Durum</th></tr></thead>
+  <tbody>
+    <tr><td>Python 3.12 + eğitim ortamı</td><td>Modeli ekran kartıyla eğitmek. Bilgisayardaki eski Python 3.14'ün yapay zeka kütüphanesi (torch) yalnızca işlemcide çalışan sürüm olduğu için ekran kartını kullanamıyordu. Eski Python'a dokunulmadı.</td><td>Yeni kuruldu <span class="ok">✓</span></td></tr>
+    <tr><td>WSL2 Ubuntu (Windows içinde Linux)</td><td>Eğitilen modeli telefon formatına (.tflite) çevirmek</td><td>Yeni kuruldu <span class="ok">✓</span></td></tr>
+    <tr><td>Android SDK</td><td>Android uygulaması derlemek ve telefona yüklemek</td><td>Yeni kuruldu <span class="ok">✓</span></td></tr>
+    <tr><td>Flutter</td><td>Mobil uygulama geliştirmek</td><td>Vardı, güncellendi <span class="ok">✓</span></td></tr>
+    <tr><td>VS Code eklentileri (Flutter, Python)</td><td>Kod yazarken yardım ve hata ayıklama</td><td>Yeni kuruldu <span class="ok">✓</span></td></tr>
+    <tr><td>Java, Git, VS Code</td><td>Derleme, sürüm takibi, kod editörü</td><td>Zaten vardı</td></tr>
+  </tbody>
+</table>
+
+<h3>Bugün yapılan testler</h3>
+<table>
+  <thead><tr><th style="width:38%">Test</th><th>Sonuç</th></tr></thead>
+  <tbody>
+    <tr><td>Ekran kartıyla deneme eğitimi (1 tur)</td><td><span class="ok">✓ Başarılı.</span> RTX 3050 (4 GB) kullanıldı.</td></tr>
+    <tr><td>Eğitilmemiş YOLO11n'i telefon formatına çevirme</td><td><span class="ok">✓ Başarılı.</span> 10,3 MB'lık .tflite dosyası oluştu.</td></tr>
+    <tr><td>Çevrilen model orijinaliyle aynı sonucu veriyor mu?</td><td><span class="ok">✓ Evet.</span> Örnek fotoğrafta ikisi de aynı 5 nesneyi (1 otobüs, 4 kişi) buldu; güven değerleri çok yakın.</td></tr>
+    <tr><td>Eklentili boş Android uygulamasını derleme</td><td><span class="ok">✓ Başarılı.</span> APK dosyası oluştu.</td></tr>
+  </tbody>
+</table>
+
+<h3>Kurulumda çıkan sorunlar ve çözümleri</h3>
+<table>
+  <thead><tr><th style="width:38%">Sorun</th><th>Çözüm</th></tr></thead>
+  <tbody>
+    <tr><td>Android derlemesi durdu: "NDK kurulamadı"</td><td>Yeni Android araçları ile Flutter paket adlarını farklı yazıyor. Gerekli parça (NDK) elle kuruldu, derleme çalıştı. İleride tekrar olursa ne yapılacağı <i>KURULUM.md</i>'de yazıyor.</td></tr>
+    <tr><td>İlk çevirme denemesi çöktü</td><td>Çevirme aracı eksik bir paketi kurarken yapay zeka kütüphanesinin sürümünü değiştirdi ve çalışan program çöktü. İkinci denemede sorunsuz çalıştı; paketler artık kurulu olduğu için tekrar olmayacak.</td></tr>
+    <tr><td>Eğitim aracı internete anonim kullanım verisi gönderiyordu</td><td>Kapatıldı. "İnternetsiz çalışır" iddiamızla çelişmesin diye.</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ HAFTALIK PLAN ============ -->
+<h2 class="new-page">4. Haftalık Plan</h2>
+<p>Her haftanın sonunda bir <b>kontrol noktası</b> var. Kontrol noktası geçilemezse beklemeyiz; önceden yazılmış <b>B planına</b> geçeriz.</p>
+
+<div class="week done">
+  <div class="hd">Hafta 0 — Kurulum <span>· 28 Ekim</span> &nbsp;<span class="ok" style="color:#fff">✓ TAMAMLANDI</span></div>
+  <div class="bd">Ortam kuruldu ve test edildi. 1. haftanın ilk adımı olan "modeli bilgisayarda telefon formatına çevirme" de bugün tamamlandı.</div>
+</div>
+
+<div class="week">
+  <div class="hd">Hafta 1 — Risk testi ve veri seti kontrolü <span>· 29 Ekim – 4 Kasım</span></div>
+  <div class="bd"><ul>
+    <li>Eğitilmemiş modeli telefona yükle; telefonun insan, şişe, araba gibi nesneleri bulduğunu gör.</li>
+    <li>Telefonda hızı ölç: saniyede kaç kare işleniyor (FPS)? Telefonun ekran kartı ile işlemcisini ve farklı görüntü boyutlarını (640 / 480 / 320) karşılaştır.</li>
+    <li>Aynı fotoğrafı bilgisayarda ve telefonda çalıştır, sonuçların aynı çıktığını kontrol et.</li>
+    <li>Veri setini indir ve incele: her levha türünden kaç fotoğraf var, levhalar ne kadar küçük, aynı fotoğrafın kopyaları hem eğitim hem test bölümünde var mı, etiketler doğru mu (100 tanesine göz at).</li>
+  </ul></div>
+  <div class="gate"><b>Hafta sonunda:</b> Model telefonda çalışıyor ve en az bir ayarda <b>saniyede ≥ 5 kare</b> işliyor (hedef 8).</div>
+  <div class="planb"><b>Olmazsa:</b> Model eklentide çalışmazsa eklentinin resmi desteklediği YOLO26n'e geçilir. Yavaşsa sırayla şunlar denenir: telefonun ekran kartı → daha küçük görüntü → sıkıştırılmış (INT8) model → YOLO26n.</div>
+</div>
+
+<div class="week">
+  <div class="hd">Hafta 2 — Modeli eğitme <span>· 5 – 11 Kasım</span></div>
+  <div class="bd"><ul>
+    <li>YOLO11n'i Türk levhalarıyla eğit (en fazla 150 tur; 30 tur boyunca gelişme olmazsa eğitim kendiliğinden durur).</li>
+    <li><b>Önemli:</b> Fotoğrafları aynalama kapalı olacak. Açık kalırsa "Sağdan gidiniz" ile "Soldan gidiniz" levhaları birbirine karışır.</li>
+    <li>Her levha türü için başarıyı ayrı ölç ve hangi levhaların birbirine karıştığına bak.</li>
+    <li>Modelin 3 telefon sürümünü hazırla: normal, yarı sıkıştırılmış, tam sıkıştırılmış. Her birinin doğruluğunu ve telefondaki hızını tabloya yaz, en iyisini seç.</li>
+  </ul></div>
+  <div class="gate"><b>Hafta sonunda:</b> Test fotoğraflarında doğruluk puanı (mAP50) <b>≥ 0,80</b> ve telefonda saniyede ≥ 5 kare. (Kıyas için: Roboflow'un kendi modeli bu veride 0,85 alıyor.)</div>
+  <div class="planb"><b>Olmazsa:</b> Doğruluk düşükse sorunlu levha türlerine bakılır; daha uzun eğitim veya daha büyük görüntü boyutu denenir. Model yavaşsa sıkıştırma ya da daha küçük görüntü boyutu kullanılır.</div>
+</div>
+
+<div class="week">
+  <div class="hd">Hafta 3 — Uygulamanın ilk çalışan sürümü <span>· 12 – 18 Kasım</span></div>
+  <div class="bd"><ul>
+    <li>Kamera ekranı, eğitilmiş model, filtre, tekrar önleme, ses sırası ve ses dosyaları.</li>
+    <li>Ekran yatay modda sabit kalacak ve hiç kapanmayacak. Basit bir ayar ekranı olacak (güven eşiği, yakınlaştırma).</li>
+    <li>Açılışta "Deneysel prototiptir, güvenlik sistemi değildir" uyarısı. "Hakkında" ekranında veri setinin kaynağı.</li>
+    <li>Tekrar önleme ve ses sırası mantığı için otomatik testler.</li>
+    <li>Uçak modunda (internet tamamen kapalıyken) tam çalışma testi.</li>
+  </ul></div>
+  <div class="gate"><b>Hafta sonunda:</b> Ekrandaki ya da kâğıda basılmış levha fotoğraflarıyla "levhayı gör → sesli söyle" baştan sona çalışıyor, uçak modunda da çalışıyor.</div>
+</div>
+
+<div class="week">
+  <div class="hd">Hafta 4 — İlk yol testi ve iyileştirme <span>· 19 – 25 Kasım</span></div>
+  <div class="bd"><ul>
+    <li><b>Güvenlik kuralı:</b> Sürücü telefona hiç dokunmaz. Telefonu yolcu ayarlar; telefon ön camda vantuzlu tutucuda durur.</li>
+    <li>Önce yol videosu çekilir ve model bilgisayarda bu video üzerinde denenir. Sonra canlı test yapılır.</li>
+    <li>Ölçüm formu doldurulur: hangi levha, araç hızı, hava ve ışık durumu, levha algılandı mı, uyarı levhaya varmadan önce mi geldi, yanlış alarm oldu mu.</li>
+    <li>30 dakikalık kesintisiz kullanımda telefonun ısınması, pil tüketimi ve hız düşüşü ölçülür.</li>
+    <li>Ayarlar ince ayarlanır: güven eşiği, tekrar önleme süreleri, yakınlaştırma (1x mi 1,5x mi).</li>
+  </ul></div>
+</div>
+
+<div class="week">
+  <div class="hd">Hafta 5 — İkinci yol testi ve rapor <span>· 26 Kasım – 2 Aralık</span></div>
+  <div class="bd">Farklı koşullarda testler yapılır (gündüz, akşam, mümkünse yağmur) ve sonuç tablosu çıkarılır. Rapor yazılır: sistem nasıl çalışıyor, ölçüm sonuçları, sınırlar. Demo videosu çekilir.</div>
+</div>
+
+<div class="week">
+  <div class="hd">Hafta 6 — Yedek süre ve (isteğe bağlı) bilgisayar sürümü <span>· 3 – 9 Aralık</span></div>
+  <div class="bd">Önceki haftalardan kalan işler bitirilir. Vakit kalırsa bilgisayar sürümü yapılır: web kamerası + aynı modelin PC formatı (.onnx).</div>
+</div>
+
+<!-- ============ SORUNLAR ============ -->
+<h2 class="new-page">5. Olası Sorunlar ve Önlemleri</h2>
+<p>ChatGPT'nin çıkardığı 51 sorun ve araştırma sırasında bulunan 11 yeni sorun aşağıda. Her sorunun bir sahibi ve zamanı var.</p>
+<p class="legend">
+  <span class="tag t-ek">Eklenti çözüyor</span> hazır eklenti hallediyor, 1. haftada kontrol edilecek &nbsp;
+  <span class="tag t-biz">Bizim önlemimiz</span> biz çözüyoruz &nbsp;
+  <span class="tag t-olc">Ölçülecek</span> denenip ayarlanacak &nbsp;
+  <span class="tag t-sin">Kabul edilen sınır</span> tam çözülemez, raporda dürüstçe yazılacak
+</p>
+<p class="meta">"Ne zaman" sütunu: H1 = 1. hafta, H2 = 2. hafta, …</p>
+
+<h3>Kamera ve görüntü kalitesi</h3>
+<table>
+  <thead><tr><th>#</th><th style="width:27%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th><th>Ne zaman</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td>Araç hareket ederken levha bulanık çıkıyor</td><td>Eğitimde modele bilerek bulanık fotoğraflar da gösteriliyor. Telefon sağlam tutucuda duruyor. "5 karenin 3'ü" kuralı sayesinde tek bir bulanık kare sonucu bozmuyor.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2, H4</td></tr>
+    <tr><td class="num">2</td><td>Kamera sürekli odak arıyor, uzak levhalar bulanıklaşıyor</td><td>Eklentinin odak ayarları 1. haftada incelenecek. Yolda sorun çıkarsa eklentide küçük bir değişiklikle odak sabitlenecek.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H1, H4</td></tr>
+    <tr><td class="num">3</td><td>Her telefon odağı "sonsuza" sabitlemeyi desteklemiyor</td><td>Odağı sabitlemiyoruz. Levhalar her zaman birkaç metreden uzakta olduğu için otomatik odak yeterli olmalı; yolda kontrol edilecek.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H4</td></tr>
+    <tr><td class="num">4</td><td>Işık değişince görüntünün parlaklığı ve rengi oynuyor</td><td>Eğitimde parlaklığı ve rengi değiştirilmiş fotoğraflar da kullanılıyor.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2</td></tr>
+    <tr><td class="num">5</td><td>Bozuk yolda görüntü sarsılıyor</td><td>Vantuzlu tutucu, "5 karenin 3'ü" kuralı ve bulanık fotoğraflarla eğitim.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H4</td></tr>
+    <tr><td class="num">6</td><td>Kamera görüntüsünü modelin anlayacağı biçime çevirmek yavaş (YUV → RGB)</td><td>Bu çevirmeyi eklenti telefonun kendi hızlı kodunda yapıyor; görüntü Flutter'a hiç taşınmıyor.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">7</td><td>Uzaktaki levha görüntüde çok küçük kalıyor</td><td>Model 640 piksellik görüntüyle çalışıyor. Gerekirse kamera 1,5 kat yakınlaştırılır. Veri setinde küçük levhaların oranı ölçülecek.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H1, H4</td></tr>
+    <tr><td class="num">8</td><td>Görüntünün sadece ortası kullanılırsa kenardaki levhalar kaçıyor</td><td>Görüntü kırpılmıyor, tamamı kullanılıyor.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">—</td></tr>
+    <tr><td class="num">9</td><td>Gece ve tünelde görüntü karanlık ve karlı</td><td>Ana hedef gündüz koşulları. Gece başarısı ölçülüp raporda yazılacak.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H5</td></tr>
+    <tr><td class="num">10</td><td>Güneş ya da far ışığı levhanın detayını kapatıyor</td><td>Işığı değiştirilmiş fotoğraflarla eğitim. Kalan etki raporda sınır olarak yazılacak.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H5</td></tr>
+    <tr><td class="num">11</td><td>Yağmur, sis, kirli lens</td><td>Testten önce lens temizlenir. Kötü hava raporda sınır olarak yazılır.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H4</td></tr>
+    <tr><td class="num">12</td><td>Ağaç ya da araç levhanın bir kısmını kapatıyor</td><td>Eğitim yöntemi (mosaic) modele zaten yarım görünen levhalar da gösteriyor. Çok kapanmış levhalar sınır olarak kalır.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H2</td></tr>
+    <tr><td class="num">13</td><td>Her telefonun kamerası farklı</td><td>Tek bir hedef telefon seviyesi seçildi. Başka bir telefon bulunursa karşılaştırma yapılır.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H5</td></tr>
+  </tbody>
+</table>
+
+<h3>Veri seti ve model eğitimi</h3>
+<table>
+  <thead><tr><th>#</th><th style="width:27%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th><th>Ne zaman</th></tr></thead>
+  <tbody>
+    <tr><td class="num">14</td><td>Veri setinde yeterince çeşit yok (hava, ışık, mesafe)</td><td>Veri seti 1. haftada incelenecek. Eksikler raporda yazılır; gerekirse kendi çektiğimiz fotoğraflar eklenir.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H1, H4</td></tr>
+    <tr><td class="num">15</td><td>Bazı levha türlerinden az fotoğraf var ya da etiketler yanlış</td><td>Her türden kaç fotoğraf olduğu sayılır. 100 rastgele etikete göz atılır. Her türün başarısı ayrı takip edilir.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H1, H2</td></tr>
+    <tr><td class="num">16</td><td>Aynı levhanın neredeyse aynı fotoğrafları hem eğitimde hem testte var; sonuç olduğundan iyi görünür ("veri sızıntısı")</td><td>Birbirine çok benzeyen fotoğrafları bulan bir kontrol (görüntü parmak izi) çalıştırılır ve kopyalar test bölümünden çıkarılır.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">17</td><td>Test fotoğrafları az ya da birbirine çok benziyor</td><td>Eğitimde hiç kullanılmayan ayrı bir test bölümü ve ayrıca kendi çektiğimiz yol videoları kullanılır.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2, H4</td></tr>
+    <tr><td class="num">18</td><td>Eğitim çok erken bitiyor ya da model ezberliyor</td><td>30 tur boyunca gelişme olmazsa eğitim durur. En iyi sonuç veren model otomatik saklanır ve grafikler izlenir.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2</td></tr>
+    <tr><td class="num">19</td><td>Bilgisayar gücü yetmiyor (4 GB ekran kartı belleği)</td><td>Ayarlar 4 GB belleğe göre otomatik yapılıyor. Eğitim sırasında laptop prize takılı ve "Turbo" modda olmalı.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2</td></tr>
+    <tr><td class="num">20</td><td>Eğitim fotoğrafları ile telefon kamerası farklı</td><td>Eğitimde ve telefonda aynı görüntü boyutu kullanılır. Kendi videolarımızla kontrol edilir.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H2, H4</td></tr>
+  </tbody>
+</table>
+
+<h3>Modeli telefona taşıma</h3>
+<table>
+  <thead><tr><th>#</th><th style="width:27%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th><th>Ne zaman</th></tr></thead>
+  <tbody>
+    <tr><td class="num">21</td><td>Modeli telefon/PC formatına çevirirken hata çıkıyor</td><td>Eğitimden önce eğitilmemiş modelle deneme yapıldı: <span class="ok">bugün başarılı ✓</span>. Eğitilen modelde de çevrilmiş sürümün doğruluğu orijinalle karşılaştırılacak (fark en fazla 2 puan olmalı).</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H1, H2</td></tr>
+    <tr><td class="num">22</td><td>"NMS" işlemi telefonda desteklenmiyor (NMS: aynı levha için çıkan üst üste kutulardan en iyisini seçmek)</td><td>NMS modelin içine konmuyor; eklenti bu işi telefonda kendisi yapıyor.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">23</td><td>NMS'i Flutter'da yazmak yavaş olur</td><td>NMS Flutter'da değil, eklentinin hızlı kodunda çalışıyor.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">24</td><td>Görüntü telefonda ve PC'de farklı hazırlanırsa sonuçlar farklı çıkar</td><td>Eklenti gerekli ayarları modelin içindeki bilgilerden okuyor. Aynı fotoğraf iki tarafta da denenecek.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">25</td><td>Modelin çıktısı yanlış okunur, levha isimleri kayar</td><td>Çıktıyı eklenti okuyor. Levha isimleri modelin içinden geliyor; elle liste yazılmadığı için kayma olmaz.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">26</td><td>Model sıkıştırılırsa (INT8) doğruluk düşebilir</td><td>Üç sürüm (normal, yarı sıkıştırılmış, tam sıkıştırılmış) denenecek; doğruluk ve hız tablosuna göre seçilecek.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H2</td></tr>
+    <tr><td class="num">27</td><td>Telefonun ekran kartı modeli çalıştıramıyor</td><td>Eklenti önce telefonun ekran kartını dener, olmazsa otomatik olarak işlemciye geçer. Hangisinin çalıştığı kontrol edilecek.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">28</td><td>Telefon dikey/yatay dönünce kutular yanlış yere çiziliyor</td><td>Dönmeyi eklenti hallediyor. Ayrıca uygulama yatay modda sabitlenecek.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H3</td></tr>
+  </tbody>
+</table>
+
+<h3>Hız ve bellek</h3>
+<table>
+  <thead><tr><th>#</th><th style="width:27%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th><th>Ne zaman</th></tr></thead>
+  <tbody>
+    <tr><td class="num">29</td><td>Model her kareyi işleyemiyor, bazı kareler atlanıyor</td><td>Bilerek her zaman en yeni kare işleniyor. Hesap: 90 km/s hızda saniyede 25 metre gidilir. Saniyede 8 kare işlenirse, 50 metreden görünen bir levha yaklaşık 16 karede görülür. Bu yeterli.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">30</td><td>Eski kareler sırada birikiyor, uyarı gecikiyor</td><td>Kamera sistemi eski kareleri otomatik atıyor. Kameranın önünde el sallanarak gecikme gözle kontrol edilecek.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H1</td></tr>
+    <tr><td class="num">31</td><td>Görüntülerin sürekli kopyalanması belleği dolduruyor</td><td>Görüntü Flutter tarafına hiç gelmiyor; sadece kutu bilgisi geliyor.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">32</td><td>Saniyedeki kare sayısı (FPS) düşük</td><td>1. haftada ölçülecek. Gerekirse sırasıyla şunlar denenir: telefonun ekran kartı → daha küçük görüntü → sıkıştırılmış model → YOLO26n.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H1, H2</td></tr>
+    <tr><td class="num">33</td><td>Telefon ısınıyor, pil hızlı bitiyor</td><td>Saniyedeki kare sayısına üst sınır konur (örneğin 10). 30 dakikalık test yapılır. Yolda araç şarjı kullanılır.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H4</td></tr>
+    <tr><td class="num">34</td><td>Yüksek çözünürlük belleği dolduruyor</td><td>Kamera 720p kullanılıyor (4K değil) ve görüntü kopyalanmıyor.</td><td class="st"><span class="tag t-ek">Eklenti çözüyor</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">35</td><td>Aynı model PC'de hızlı, bazı telefonlarda yavaş</td><td>Her platformun hızı ayrı ölçülüp raporlanacak.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H5, H6</td></tr>
+  </tbody>
+</table>
+
+<h3>Algılama ve sesli uyarı</h3>
+<table>
+  <thead><tr><th>#</th><th style="width:27%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th><th>Ne zaman</th></tr></thead>
+  <tbody>
+    <tr><td class="num">36</td><td>Yanlış alarm (reklam panosunu levha sanmak)</td><td>Model emin değilse (%50 altı) sonuç yok sayılır. Çok küçük kutular dikkate alınmaz. Levha 5 karenin en az 3'ünde görülmelidir.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3, H4</td></tr>
+    <tr><td class="num">37</td><td>Gerçek levhayı kaçırmak</td><td>Kaç levhanın kaçırıldığı ölçülecek. Yanlış alarm ile kaçırma arasındaki denge ayarlanacak.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H4</td></tr>
+    <tr><td class="num">38</td><td>Levha çok geç algılanıyor, uyarı levhayı geçtikten sonra geliyor</td><td>Ölçüm formunda "uyarı levhadan önce geldi mi?" sorusu var. "5 karenin 3'ü" kuralı yalnızca yaklaşık 0,4 saniye gecikme ekliyor.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H4</td></tr>
+    <tr><td class="num">39</td><td>Tekrar önleme süresi kötü ayarlanır: çok uzunsa yeni levha kaçar, çok kısaysa ses tekrar eder</td><td>İki şartlı kural kullanılıyor: aynı levha için en az 5 saniye sessizlik, ayrıca levha 2 saniye görünmez olduktan sonra yeniden uyarı hakkı. Otomatik testlerle doğrulanacak.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">40</td><td>Nesne takibi levhayı kaybedip aynı levhayı tekrar söylüyor</td><td>Nesne takibi hiç kullanmıyoruz. "Levha türü + zaman" kuralı (39) bu sorunu kökten ortadan kaldırıyor.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">41</td><td>Takip ile tekrar önleme birbirine karışıyor</td><td>40 ile aynı: takip olmadığı için böyle bir karışıklık da yok.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">42</td><td>Ses geç çalıyor</td><td>Sesler uygulama açılırken belleğe yüklenir. Cümleler kısa (en fazla 1,5 saniye). Gecikme videoyla ölçülecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3, H4</td></tr>
+    <tr><td class="num">43</td><td>Sesler üst üste çalıyor</td><td>Aynı anda tek ses çalar, diğerleri sıraya girer.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">44</td><td>Önemli uyarı, önemsiz uyarının arkasında kalıyor</td><td>3 öncelik seviyesi var (bkz. Bölüm 7). Önemli uyarı sırada öne geçer.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">45</td><td>Ses sırası uzuyor, eski uyarılar okunuyor</td><td>Sırada en fazla 2 uyarı bekler; 3 saniyeden eski uyarı atılır.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">46</td><td>Müzik ya da yol gürültüsü yüzünden uyarı duyulmuyor</td><td>Uyarı çalarken müzik otomatik kısılır. Ekranda büyük bir uyarı şeridi de çıkar.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+  </tbody>
+</table>
+
+<h3>İnternetsiz çalışma, kapsam ve test</h3>
+<table>
+  <thead><tr><th>#</th><th style="width:27%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th><th>Ne zaman</th></tr></thead>
+  <tbody>
+    <tr><td class="num">47</td><td>Model ya da ses dosyaları uygulamaya gömülmezse internetsiz çalışmaz</td><td>Model ve sesler uygulamanın içinde. Uçak modunda test edilecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">48</td><td>Levhanın hangi şeride ait olduğu anlaşılamıyor</td><td>Kapsam dışı. Sistem gördüğü levhayı söyler, şerit yorumu yapmaz. Raporda yazılacak.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H5</td></tr>
+    <tr><td class="num">49</td><td>PC ve telefon sürümü farklı sonuç veriyor</td><td>Aynı 50 fotoğraf bütün model formatlarında denenip karşılaştırılacak.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H2, H6</td></tr>
+    <tr><td class="num">50</td><td>Yol testi yetersiz kalıyor</td><td>Ölçüm formu ve video kaydı kullanılacak. Kural: sürücü telefona dokunmaz.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H4, H5</td></tr>
+    <tr><td class="num">51</td><td>Sistemi erkenden "güvenlik çözümü" diye sunmak</td><td>Uygulamada ve raporda "deneysel prototip, güvenlik sistemi değildir" yazacak. Sonuçlar dürüstçe raporlanacak.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3, H5</td></tr>
+  </tbody>
+</table>
+
+<h3>Araştırma sırasında bulunan yeni sorunlar</h3>
+<table>
+  <thead><tr><th>#</th><th style="width:33%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th></tr></thead>
+  <tbody>
+    <tr><td class="num">52</td><td><b>Aynalama hatası (en kritik bulgu).</b> Eğitim aracı fotoğrafların yarısını otomatik olarak aynalıyor. Bu durumda "Sağdan gidiniz" ↔ "Soldan gidiniz", "Sola/Sağa tehlikeli viraj", "Sola/Sağa dönülmez" levhaları birbirine karışır.</td><td>Aynalama kapatılacak (fliplr=0).</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">53</td><td>Veri setinde sadece 20 levha türü var. Hız levhalarından yalnızca 30, 50 ve 70 mevcut; model 80 levhasını 30 sanabilir.</td><td>Kapsam raporda açıkça yazılacak. Hız levhaları için daha yüksek güven eşiği kullanılacak.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td></tr>
+    <tr><td class="num">54</td><td>Modeli telefon formatına çevirme Windows'ta desteklenmiyor</td><td>Windows içine Linux (WSL2 Ubuntu) kuruldu <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">55</td><td>Xiaomi telefonlarda USB'den uygulama yüklemek için ek ayar gerekiyor; pil tasarrufu uygulamayı kapatabiliyor</td><td>"USB üzerinden yükle" ayarı açılacak. Uygulama sürekli ön planda kalacak ve ekran hiç kapanmayacak.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">56</td><td>Kullandığımız kütüphaneler çok sık güncelleniyor; güncelleme bir şeyleri bozabilir</td><td>Sürümler sabitlendi. İş çalışıyorken hiçbir şey güncellenmeyecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">57</td><td>Lisanslar</td><td>Veri setinin kaynağı rapor ve uygulamada gösterilecek. Kullandığımız eğitim aracının lisansı gereği kod GitHub'da açık paylaşılacak.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">58</td><td>Diskte yer az (~60 GB boş)</td><td>Android telefon simülatörü (emülatör) kurulmadı, gerçek telefon kullanılıyor. Eğitim çıktıları düzenli temizlenecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">59</td><td>Ekran kartı sürücüsü sadece belirli yapay zeka kütüphanesi sürümleriyle uyumlu</td><td>Uyumlu sürüm (CUDA 12.6) seçilerek kuruldu <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">60</td><td>Kurulumda yaşandı: Android derlemesi durdu (NDK kurulamadı)</td><td>Gerekli parça elle kuruldu <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">61</td><td>Kurulumda yaşandı: çevirme aracı ilk denemede çöktü</td><td>Sebebi bulundu, ikinci denemede çalıştı <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">62</td><td>Eğitim aracı internete anonim kullanım verisi gönderiyordu</td><td>Kapatıldı <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ============ SENİN YAPACAKLARIN ============ -->
+<h2 class="new-page">6. Senin Yapman Gerekenler</h2>
+<p>Bu adımlar senin hesabını, telefonunu ya da sesini gerektirdiği için onları ben yapamıyorum:</p>
+<ul class="check">
+  <li><b>Telefonu hazırla:</b> Ayarlar → Telefon hakkında → "MIUI sürümü" yazısına 7 kez dokun. Sonra Ek ayarlar → Geliştirici seçenekleri bölümünde <b>USB hata ayıklama</b> ve <b>USB üzerinden yükle</b> seçeneklerini aç. Telefonu USB ile bilgisayara bağla ve ekranda çıkan "izin ver" sorusunu onayla.</li>
+  <li><b>Veri setini indir:</b> Roboflow'da ücretsiz hesap aç. Veri seti sayfasından bir sürüm seç (mümkünse "Augmentations: none" yazanı), <b>YOLOv11</b> biçiminde zip olarak indir. Zip'i <i>ml/data/raw/</i> klasörüne koy; gerisini ben düzenlerim.</li>
+  <li><b>Telefon tutucu al:</b> Ön cama yapışan vantuzlu bir tutucu.</li>
+  <li><b>Sesleri kaydet:</b> Bölüm 7'deki 20 cümleyi sessiz bir odada telefonla kaydet. İstersen sesleri bilgisayarda yapay sesle (TTS) bir kez üretip uygulamaya gömebiliriz.</li>
+</ul>
+
+<!-- ============ SESLER ============ -->
+<h2>7. Levhalar, Sesli Uyarılar ve Öncelikleri</h2>
+<p>Öncelik: <b>1</b> = kritik (sırada öne geçer), <b>2</b> = uyarı/yasak, <b>3</b> = bilgi</p>
+<table>
+  <thead><tr><th style="width:26%">Levha (modeldeki adı)</th><th>Söylenecek cümle</th><th style="width:12%">Öncelik</th></tr></thead>
+  <tbody>
+    <tr><td>stop</td><td>"Dur"</td><td>1</td></tr>
+    <tr><td>noentry</td><td>"Girilmez"</td><td>1</td></tr>
+    <tr><td>giveway</td><td>"Yol ver"</td><td>1</td></tr>
+    <tr><td>schoolpassing</td><td>"Dikkat, okul geçidi"</td><td>1</td></tr>
+    <tr><td>pedestrian_risk</td><td>"Dikkat, yaya geçidi"</td><td>1</td></tr>
+    <tr><td>dangerousleft</td><td>"Sola tehlikeli viraj"</td><td>2</td></tr>
+    <tr><td>dangerousright</td><td>"Sağa tehlikeli viraj"</td><td>2</td></tr>
+    <tr><td>crossroads</td><td>"Kavşak yaklaşıyor"</td><td>2</td></tr>
+    <tr><td>caution</td><td>"Dikkat"</td><td>2</td></tr>
+    <tr><td>donotturnleft</td><td>"Sola dönülmez"</td><td>2</td></tr>
+    <tr><td>donotturnright</td><td>"Sağa dönülmez"</td><td>2</td></tr>
+    <tr><td>nouturn</td><td>"U dönüşü yasak"</td><td>2</td></tr>
+    <tr><td>keepleft</td><td>"Soldan gidiniz"</td><td>2</td></tr>
+    <tr><td>keepright</td><td>"Sağdan gidiniz"</td><td>2</td></tr>
+    <tr><td>speed30</td><td>"Hız sınırı otuz"</td><td>2</td></tr>
+    <tr><td>speed50</td><td>"Hız sınırı elli"</td><td>2</td></tr>
+    <tr><td>speed70</td><td>"Hız sınırı yetmiş"</td><td>2</td></tr>
+    <tr><td>nostopping</td><td>"Duraklamak ve park etmek yasak"</td><td>3</td></tr>
+    <tr><td>priorityroad</td><td>"Ana yol"</td><td>3</td></tr>
+    <tr><td>pedestrian_info</td><td>"Yaya geçidi"</td><td>3</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ BAŞARI ============ -->
+<h2>8. Başarıyı Nasıl Ölçeceğiz?</h2>
+<p>Proje önerisindeki 4 başarı kriterini ölçülebilir hâle getirdik:</p>
+<table>
+  <thead><tr><th style="width:36%">Öneride yazan</th><th>Ölçüt</th></tr></thead>
+  <tbody>
+    <tr><td>1. Model hatasız ve kayıpsız çevrilmeli</td><td>Telefon sürümünün doğruluğu orijinalden en fazla 2 puan düşük olmalı. Telefonda "desteklenmeyen işlem" hatası çıkmamalı.</td></tr>
+    <tr><td>2. Gerçek zamanlı ve akıcı çalışmalı</td><td>Hedef telefonda saniyede en az 8 kare (alt sınır 5).</td></tr>
+    <tr><td>3. Uyarı levha geçilmeden önce verilmeli</td><td>Yol testinde algılanan levhaların en az %80'inde uyarı, levhaya varılmadan önce tamamlanmalı.</td></tr>
+    <tr><td>4. İnternet olmadan çalışmalı</td><td>Uygulama uçak modunda bütün özellikleriyle çalışmalı.</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ SÖZLÜK ============ -->
+<h2 class="new-page">9. Küçük Sözlük</h2>
+<table>
+  <thead><tr><th style="width:24%">Terim</th><th>Anlamı</th></tr></thead>
+  <tbody>
+    <tr><td>Model / YOLO11n</td><td>Fotoğrafta levhaların yerini ve türünü bulan yapay zeka. Sondaki "n" (nano), ailenin en küçük ve en hızlı sürümü demek.</td></tr>
+    <tr><td>Veri seti</td><td>Modeli eğitmek için kullanılan, içindeki levhaları tek tek işaretlenmiş fotoğraflar.</td></tr>
+    <tr><td>Eğitim / epoch (tur)</td><td>Modelin fotoğraflara bakarak öğrenmesi. Bütün veri setinin bir kez baştan sona görülmesine 1 tur (epoch) denir.</td></tr>
+    <tr><td>.pt / .tflite / .onnx</td><td>Aynı modelin farklı dosya biçimleri: .pt eğitim için, .tflite telefon için, .onnx bilgisayar için.</td></tr>
+    <tr><td>LiteRT (TFLite)</td><td>Google'ın, modeli telefonda çalıştıran motoru. TensorFlow Lite'ın yeni adı.</td></tr>
+    <tr><td>Eklenti (plugin)</td><td>Flutter'a hazır özellik ekleyen paket. Bizimkisi <i>ultralytics_yolo</i>: kamera ve modeli birlikte çalıştırıyor.</td></tr>
+    <tr><td>FPS</td><td>Saniyede işlenen kare sayısı. Ne kadar yüksekse sistem o kadar akıcı.</td></tr>
+    <tr><td>mAP50</td><td>Modelin doğruluk puanı, 0 ile 1 arasında. Örneğin 0,85, %85 başarı demek.</td></tr>
+    <tr><td>Güven (confidence)</td><td>Modelin "bu levha şu" derken ne kadar emin olduğu (%0–%100).</td></tr>
+    <tr><td>NMS</td><td>Model aynı levha için birkaç üst üste kutu çizebilir. NMS bunlardan en iyisini seçip gerisini siler.</td></tr>
+    <tr><td>INT8 / sıkıştırma</td><td>Modeldeki sayıların daha az hassas saklanması. Model küçülür ve hızlanır, doğruluk biraz düşebilir.</td></tr>
+    <tr><td>GPU / CUDA</td><td>GPU ekran kartı demek. CUDA, NVIDIA ekran kartını yapay zeka için kullandıran yazılım.</td></tr>
+    <tr><td>WSL2</td><td>Windows'un içinde çalışan Linux. Ayrı bir bilgisayar ya da format gerektirmez.</td></tr>
+    <tr><td>Augmentasyon</td><td>Eğitimde fotoğrafları bilerek bulanıklaştırmak, karartmak, döndürmek. Amaç modelin zor koşullara alışması.</td></tr>
+    <tr><td>Cooldown (tekrar önleme)</td><td>Aynı levha için kısa sürede ikinci kez uyarı vermeme süresi.</td></tr>
+    <tr><td>Yanlış alarm / kaçırma</td><td>Yanlış alarm: levha yokken uyarı vermek. Kaçırma: levha varken uyarı vermemek.</td></tr>
+    <tr><td>Veri sızıntısı</td><td>Testte kullanılan fotoğrafların benzerlerinin eğitimde de bulunması. Bu durumda model olduğundan başarılı görünür.</td></tr>
+    <tr><td>Kontrol noktası (kapı)</td><td>Haftanın sonunda geçilmesi gereken test. Geçilemezse B planına geçilir.</td></tr>
+  </tbody>
+</table>
+
+<div class="footer-note">
+  Teknik ayrıntılar: <i>docs/YOL_HARITASI.md</i> · Kurulum kaydı ve komutlar: <i>docs/KURULUM.md</i><br>
+  Veri seti: Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0 — universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye
+</div>
+
+</body>
+</html>

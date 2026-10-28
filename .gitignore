@@ -1,0 +1,15 @@
+# Python / ML
+ml/.venv/
+ml/data/
+ml/runs/
+ml/models/
+__pycache__/
+*.pt
+*.onnx
+*_saved_model/
+*.cache
+
+# Editör / işletim sistemi
+.vscode/
+.idea/
+Thumbs.db
