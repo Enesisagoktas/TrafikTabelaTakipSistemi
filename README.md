@@ -7,8 +7,9 @@
 
 | Klasör | İçerik |
 |---|---|
-| `ml/` | Model eğitimi (Windows, GPU) ve `.tflite` dışa aktarma (WSL) |
-| `mobile/` | Android uygulaması (Flutter + `ultralytics_yolo`) |
+| `ml/` | Veri seti, model eğitimi (GPU) ve `.tflite` / `.onnx` dışa aktarma |
+| `mobile/` | Android uygulaması (Flutter + `ultralytics_yolo`) — ilk ürün |
+| `desktop/` | Windows uygulaması (Python + ONNX Runtime) — en son yapılacak |
 | `docs/` | Belgeler |
 
 Veri seti: [Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye), Hootbu, CC BY 4.0.

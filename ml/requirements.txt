@@ -1,4 +1,4 @@
-# Windows eğitim ortamı (ml/.venv, Python 3.12)
+# Windows eğitim + dışa aktarma ortamı (ml/.venv, Python 3.12)
 # Kurulum: py -3.12 -m venv .venv ; .venv\Scripts\python -m pip install -r requirements.txt
 # cu126: GPU sürücüsü (566.07) en fazla CUDA 12.7 destekliyor.
 --extra-index-url https://download.pytorch.org/whl/cu126
@@ -7,6 +7,15 @@ torchvision==0.29.1+cu126
 ultralytics==8.4.191
 albumentations==2.0.8   # Ultralytics bunu görünce eğitimde bulanıklaştırma artırımı uygular
 imagehash==4.3.2        # veri sızıntısı denetimi (yakın kopya)
-onnx==1.23.2
+onnx==1.22.0
 onnxslim==0.1.98
 onnxruntime-gpu==1.31.1
+
+# .tflite dışa aktarma (format=saved_model -> onnx2tf). Ultralytics'in Python 3.12 için seçtiği sürümler.
+tensorflow==2.19.0
+tf_keras==2.19.0
+onnx2tf==1.28.8
+sng4onnx==2.0.1
+onnx_graphsurgeon==0.6.1
+ai-edge-litert==2.3.0   # .tflite modelini Windows'ta çalıştırıp doğrulamak için
+protobuf==5.29.6

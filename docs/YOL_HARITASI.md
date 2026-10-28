@@ -1,7 +1,8 @@
 # Trafik Levhası Sürücü Asistanı — Yol Haritası
 
 > Hazırlanma: 28 Ekim 2026 · Teslim hedefi: ~6 hafta (en geç 9 Aralık 2026)
-> Öncelik: **Android uygulaması**. PC sürümü son haftaya (veya sonrasına) bırakıldı.
+> Öncelik: Önce **Android uygulaması** yapılır ve ilk sürüm telefonda test edilir. **Windows uygulaması** en son yapılır (Hafta 6).
+> Geliştirme, eğitim, dışa aktarma ve testlerin tamamı bu **Windows 11** bilgisayarda yapılır; Linux kullanılmaz.
 
 ---
 
@@ -9,18 +10,18 @@
 
 | Konu | Karar | Neden |
 |---|---|---|
-| İlk platform | Android (Flutter) | Test telefonu Android; Windows'tan iOS derlenemez. |
+| İlk platform | Android (Flutter); en son Windows uygulaması | Test telefonu Android; Windows'tan iOS derlenemez. |
 | Model | **YOLO11n** (yedek plan: YOLO26n) | YOLOv8/YOLO11 için topluluk örneği çok fazla; ikisi de aynı çıktı biçimini kullanır (`[1, 4+sınıf, 8400]`). |
 | Mobil çıkarım | Resmi **`ultralytics_yolo`** Flutter eklentisi | Kamera, YUV→RGB, LiteRT, GPU→CPU geçişi ve NMS'i yerel (Kotlin) kodda hazır yapar. Bizim yazacağımız kısım: filtreleme, cooldown, ses kuyruğu ve arayüz. |
 | Hedef cihaz | Redmi Note 8 seviyesi (Snapdragon 665, Adreno 610, 4 GB RAM) | Alt-orta segment: "bunda çalışıyorsa her yerde çalışır." |
-| Veri seti | [Hootbu — Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye) | 5.527 görsel, 20 sınıf, **CC BY 4.0** (atıf zorunlu). Roboflow'un kendi modeli bu veride mAP50 %85,1 alıyor; bu bizim kıyas çizgimiz. |
+| Veri seti | [Hootbu — Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye) | 5.527 görsel, 20 sınıf, **CC BY 4.0** (atıf zorunlu). Roboflow'un kendi modeli bu veride mAP50 %85,1 alıyor; bu bizim kıyas çizgimiz. Ancak test setindeki sızıntı nedeniyle bu değer büyük ihtimalle şişkin (bkz. `docs/veri_denetimi.md`). |
 | Eğitim | Bu bilgisayar (Windows 11, RTX 3050 Laptop 4 GB) | Yerel GPU, çevrimdışı eğitim. |
-| TFLite dışa aktarma | **WSL2 Ubuntu 24.04** (Windows içindeki Linux) | Ultralytics'in güncel LiteRT/TFLite dışa aktarması yalnızca Linux x86_64 ve macOS'ta destekleniyor; Windows'ta çalışmıyor. |
+| TFLite dışa aktarma | Windows'ta, eğitimle aynı `ml/.venv` içinde: `format=saved_model` (ONNX → onnx2tf → `.tflite`) | Ultralytics'in yeni `litert` formatı Windows'u desteklemiyor. Eski ve yaygın onnx2tf yolu ise Windows'ta çalışıyor ve sınıf isimlerini dosyaya gömüyor (28 Ekim'de doğrulandı). |
 | Sesler | Önceden kaydedilmiş Türkçe `.mp3` dosyaları + `just_audio` | TTS gecikmesi yok, tamamen çevrimdışı. |
 
 **Proje önerisinden sapmalar (raporda gerekçesiyle yazılmalı):**
 - Öneride `camera` + `tflite_flutter` + Isolate yazıyor. Bunların yerine resmi eklenti kullanılıyor. Eklenti çıkarımı yerel bir arka plan thread'inde yapıyor ve Dart tarafına yalnızca küçük bir sonuç listesi geliyor. Önerideki "arayüz donmasın" hedefi bu yolla karşılanıyor.
-- Öneride eğitim ortamı olarak Linux Mint yazıyor. Eğitim Windows'ta yapılıyor; dışa aktarma için WSL2 Ubuntu kullanılıyor.
+- Öneride eğitim ortamı olarak Linux Mint yazıyor. Eğitim, dışa aktarma ve testler dahil her şey Windows 11'de yapılıyor.
 
 ---
 
@@ -57,13 +58,14 @@ Dart tarafındaki iş her karede en fazla birkaç kutuluk bir liste olduğu içi
 
 ## 2. Geliştirme ortamı
 
-| Araç | Nerede | Ne için |
-|---|---|---|
-| Python 3.12 + `ml/.venv` | Windows | Eğitim: PyTorch (CUDA 12.6), Ultralytics, albumentations, imagehash, ONNX |
-| Ubuntu 24.04 + `/root/venvs/export` | WSL2 | `.pt` → `.tflite` dışa aktarma ve `.tflite` doğrulaması |
-| Flutter (stable) + Android SDK (API 36) | Windows | Mobil uygulama |
-| JDK 21 (Temurin) | Windows | Gradle / Android derlemesi |
-| VS Code + Flutter/Python/WSL eklentileri | Windows | Editör |
+| Araç | Ne için |
+|---|---|
+| Python 3.12 + `ml/.venv` | Eğitim (PyTorch CUDA 12.6, Ultralytics, albumentations, imagehash); dışa aktarma ve doğrulama (ONNX, TensorFlow + onnx2tf, ai-edge-litert) |
+| Flutter (stable) + Android SDK (API 36) | Mobil uygulama |
+| JDK 21 (Temurin) | Gradle / Android derlemesi |
+| VS Code + Flutter/Python eklentileri | Editör |
+
+Hepsi Windows 11 üzerinde çalışıyor.
 
 Kurulu sürümlerin tamamı `docs/KURULUM.md` dosyasında.
 
@@ -76,26 +78,31 @@ Her haftanın sonunda bir **kapı** var. Kapıyı geçemezsek yazılı B planın
 ### Hafta 0 — 28 Ekim: Kurulum ✔
 Ortam kuruldu ve araçlar doğrulandı (bkz. `docs/KURULUM.md`):
 - GPU ile 1 epoch'luk deneme eğitimi çalıştı (RTX 3050, CUDA).
-- Ham `yolo11n.pt` WSL'de `.tflite`'a çevrildi (giriş `1×3×640×640`, çıkış `1×84×8400`). Aynı fotoğrafta `.pt` ile aynı 5 nesneyi buldu → **Hafta 1'in 1. adımı tamamlandı.**
+- Ham `yolo11n.pt` Windows'ta `.tflite`'a çevrildi: FP32 (10,2 MB) ve FP16 (5,1 MB); çıkış `1×84×8400`; sınıf isimleri dosyaya gömülü. Aynı fotoğrafta `.pt` ile aynı 5 nesneyi buldu → **Hafta 1'in 1. adımı tamamlandı.**
 - Eklentiyle birlikte boş Flutter uygulamasının APK'sı derlendi.
+- Veri seti indirilip `ml/data/levha` altına yerleştirildi ve denetlendi (Hafta 1'in 5. adımı, bkz. `docs/veri_denetimi.md`).
 
 ### Hafta 1 — 29 Ekim–4 Kasım: Dönüşüm risk testi + veri denetimi
-1. Ham (eğitilmemiş) `yolo11n.pt` modelini WSL'de `.tflite`'a dönüştür (`nms=None`). Bunu imgsz 640, 480 ve 320 için ayrı ayrı yap.
+1. Ham (eğitilmemiş) `yolo11n.pt` modelini `.tflite`'a dönüştür: 640 için yapıldı ✔. Aynı komutla 480 ve 320 için de dönüştür (`yolo export model=models/yolo11n.pt format=saved_model imgsz=480`).
 2. Boş Flutter uygulamasına eklentiyi ve bu modeli koy. Telefonda COCO nesnelerini (insan, şişe, araba) algıladığını gör.
 3. Telefonda ölç: FPS ve çıkarım süresi (ms), `useGpu: true/false`, her imgsz için. Sonuçları `docs/olcumler.md` dosyasına yaz.
 4. Aynı fotoğrafı PC'de (`.pt`) ve telefonda çalıştır; kutuların ve sınıfların aynı çıktığını doğrula.
-5. Veri seti: Roboflow'dan **YOLOv11 formatında** indir (augmentasyon uygulanmamış sürümü tercih et) ve `ml/data/` altına koy. Ardından denetim betiğini çalıştır: sınıf sayıları, kutu boyutu dağılımı, bölmeler (train/val/test) arasında yakın-kopya kontrolü, 100 rastgele etiketin gözle kontrolü.
+5. Veri seti denetimi ✔ (`ml/scripts/veri_denetimi.py` → `docs/veri_denetimi.md`):
+   - Sınıflar dengeli: train'de her sınıftan 298–330 kutu var.
+   - Levhalar küçük: imgsz=640'ta kısa kenarın medyanı 21 px. imgsz=320'de levhaların %69'u 16 px'in altına iniyor → **320 kullanılamaz**, en fazla 480'e inilebilir.
+   - **Veri sızıntısı:** valid/test görsellerinin ~%45'i train'deki bir görselin neredeyse aynısı (aynı sahnenin peş peşe kareleri). Bunlar çıkarılarak `data/levha/data_temiz.yaml` oluşturuldu (temiz valid/test listeleri).
+   - Görsellerin önemli bir kısmı Google Street View ekran görüntüsü; kenarlarında tarayıcı ve görev çubuğu görünüyor (bkz. risk 63).
 
-**Kapı:** YOLO11 `.tflite` eklentide çalışıyor **ve** en az bir ayarda ≥ 5 FPS (hedef ≥ 8).
-**B planı:** Model eklentide çalışmazsa eklentinin resmi desteklediği YOLO26n'e geçilir. FPS düşükse sırayla şunlar denenir: GPU → imgsz 416/320 → INT8 → YOLO26n.
+**Kapı:** YOLO11 `.tflite` eklentide çalışıyor **ve** imgsz 640 ya da 480'de ≥ 5 FPS (hedef ≥ 8).
+**B planı:** Model eklentide çalışmazsa eklentinin resmi desteklediği YOLO26n'e geçilir. FPS düşükse sırayla şunlar denenir: GPU → INT8 → imgsz 480 → YOLO26n.
 
 ### Hafta 2 — 5–11 Kasım: Eğitim + dışa aktarma
-1. Eğitim 1: `yolo11n.pt`, `imgsz` = Hafta 1'de seçilen değer, `epochs=150`, `patience=30`, **`fliplr=0.0`**, `batch=-1`, `workers=4`.
-2. Değerlendirme: sınıf bazlı mAP, karışıklık matrisi, eğitimde hiç kullanılmamış test seti.
-3. Dışa aktarma (WSL): FP32, `w8a32` (dinamik INT8) ve `quantize=8` (statik INT8) varyantları. Doğruluk WSL'de `yolo val` ile, hız telefonda ölçülür; en iyi varyant seçilir.
-4. Hafta 1 başarılıysa sürümleri sabitle (`requirements.txt` içinde `==`, `pubspec.lock` commit edilir).
+1. Eğitim 1: `yolo11n.pt`, `data=data/levha/data_temiz.yaml` (erken durdurma sızıntısız valid ile yapılsın), `imgsz=640`, `epochs=150`, `patience=30`, **`fliplr=0.0`**, `batch=-1`, `workers=4`.
+2. Değerlendirme: sınıf bazlı mAP ve karışıklık matrisi. Sonuç **iki test setinde** raporlanır: orijinal test (Roboflow'un %85,1'iyle kıyas için) ve temiz test (gerçek başarı).
+3. Dışa aktarma (Windows): `format=saved_model` FP32 ve FP16 üretir; `quantize=8 data=data/levha/data.yaml` eklenince INT8 varyantları da çıkar. Doğruluk Windows'ta `yolo val` ile ölçülür (`.tflite` doğrudan çalıştırılabiliyor); hız telefonda ölçülür. En iyi varyant seçilir.
+4. Sürümler sabit tutulur (`ml/requirements.txt` ✔, `mobile/pubspec.lock`); çalışan bir şey olduğunda paket güncellenmez.
 
-**Kapı:** Test setinde mAP50 ≥ 0,80 **ve** telefonda ≥ 5 FPS.
+**Kapı:** Orijinal test setinde mAP50 ≥ 0,80 **ve** telefonda ≥ 5 FPS. Temiz test sonucu ayrıca raporlanır (sızıntı olmadığı için daha düşük çıkması beklenir).
 **B planı:** mAP düşükse veri denetimindeki sorunlu sınıflara bak; daha uzun eğitim veya imgsz artışı denenir. Hız düşükse INT8 veya daha küçük imgsz.
 
 ### Hafta 3 — 12–18 Kasım: Mobil uygulama (ilk çalışan sürüm)
@@ -113,13 +120,13 @@ Ortam kuruldu ve araçlar doğrulandı (bkz. `docs/KURULUM.md`):
 3. Ölçüm formu (`docs/saha_testi.md`): levha, hız, hava ve ışık, algılandı mı, uyarı levha geçilmeden önce mi geldi, yanlış uyarı oldu mu.
 4. 30 dakikalık sürekli kullanımda ısınma ve pil testi; FPS düşüşünü kaydet.
 5. Ayar: güven eşiği, oylama penceresi, cooldown süreleri, zoom (1.0x ve 1.5x).
-6. (Süre kalırsa) Kendi çektiğin zor karelerden örnekleri etiketleyip yeniden eğit.
+6. Kendi çektiğin telefon görüntülerinden zor örnekleri etiketleyip eğitime ekle ve yeniden eğit. Veri setinin büyük kısmı Street View ekran görüntüsü olduğu için bu adım önemli (risk 63).
 
 ### Hafta 5 — 26 Kasım–2 Aralık: Saha testi 2 + rapor
 Farklı koşullarda (gündüz/akşam, mümkünse yağmur) testler ve sonuç tablosu. Rapor bölümleri: mimari, ölçümler, sınırlar, demo videosu.
 
-### Hafta 6 — 3–9 Aralık: Tampon + (isteğe bağlı) PC sürümü
-`best.onnx` (Windows'ta doğrudan dışa aktarılabilir) + OpenCV + onnxruntime. Kamera okuma, çıkarım ve ses ayrı thread'lerde. Ön işleme ve son işlemede Ultralytics'in kendi kodu birebir kullanılır.
+### Hafta 6 — 3–9 Aralık: Windows uygulaması + tampon
+Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runtime (GPU) + OpenCV. Kamera okuma, çıkarım ve ses ayrı thread'lerde çalışır. Filtre, cooldown ve ses kuyruğu kuralları mobil sürümle aynıdır. Ön işleme ve son işlemede Ultralytics'in kendi kodu birebir kullanılır. Canlı test bu bilgisayarda web kamerasıyla yapılır. Kalan süre, önceki haftalardan kalan işler için tampondur.
 
 ---
 
@@ -140,7 +147,7 @@ Farklı koşullarda (gündüz/akşam, mümkünse yağmur) testler ve sonuç tabl
 | 4 | Otomatik pozlama ve beyaz dengesi | 🔧 | Eğitimde HSV (parlaklık/doygunluk) artırımı uygulanır; oylama ani ışık sıçramalarını tolere eder. | H2 |
 | 5 | Titreşim | 🔧 | Vantuzlu tutucu + oylama + bulanıklık artırımı. | H4 |
 | 6 | YUV420 → RGB dönüşümü | 🟢 | Dönüşüm eklentinin yerel kodunda yapılıyor; görüntü Dart'a hiç taşınmıyor. | H1 |
-| 7 | Uzak levhanın az piksel kaplaması | 📏🔧 | Kamera 720p, model girişi 640 (ölçüme göre 480). Gerekirse 1.5x zoom kullanılır. Veri setindeki küçük kutuların oranı ölçülür. | H1, H4 |
+| 7 | Uzak levhanın az piksel kaplaması | 📏🔧 | Ölçüldü ✔: imgsz=640'ta kısa kenarın medyanı 21 px, levhaların %35'i 16 px'in altında. Bu yüzden model girişi 640 (zorunlu kalırsa 480); 320 kullanılmaz. Kamera 720p; gerekirse 1.5x zoom kullanılır. | H1, H4 |
 | 8 | ROI kırpma kaynaklı kayıp | 🔧 | Kırpma **yok**, tam kare kullanılıyor. Zoom kenarları keser; 1.0x ve 1.5x sahada kıyaslanır. | H4 |
 | 9 | Gece / tünel | ⚠️ | Birincil hedef gündüz koşulları. Gece performansı ölçülüp raporlanır; veri setindeki gece örneği oranı denetlenir. | H1, H5 |
 | 10 | Parlama / ters ışık | ⚠️🔧 | HSV artırımı ve oylama; kalan etki sınır olarak raporlanır. | H2, H5 |
@@ -151,23 +158,23 @@ Farklı koşullarda (gündüz/akşam, mümkünse yağmur) testler ve sonuç tabl
 ### Veri seti ve model eğitimi
 | # | Sorun | Durum | Ne yapıyoruz | Ne zaman |
 |---|---|---|---|---|
-| 14 | Yetersiz çeşitlilik | 🔧📏 | Denetimde ışık ve mesafe örneklenir, kutu boyutu histogramı çıkarılır. Eksikler raporlanır; H4'te kendi zor örneklerimiz eklenebilir. | H1, H4 |
-| 15 | Sınıf dengesizliği, hatalı etiket | 🔧 | Denetim betiği sınıf sayılarını çıkarır, sınıf bazlı mAP takip edilir, 100 rastgele etiket kutularıyla çizilip gözle kontrol edilir. | H1, H2 |
-| 16 | Veri sızıntısı | 🔧 | Bölmeler arasında algısal hash (`imagehash`) ile yakın kopyalar bulunur ve test setinden çıkarılır. Roboflow'da augmentasyonsuz sürüm seçilir. | H1 |
+| 14 | Yetersiz çeşitlilik | 🔧📏 | Denetlendi ✔: veri seti Street View ekran görüntüleri ile araç içinden çekilmiş fotoğrafların karışımı; bazı görseller 90° yan dönmüş (etiketleri piksellerle uyumlu). H4'te kendi telefon görüntülerimiz eklenecek (risk 63). | H1, H4 |
+| 15 | Sınıf dengesizliği, hatalı etiket | 🔧 | Denetlendi ✔: sınıflar dengeli (train'de sınıf başına 298–330 kutu). 100 rastgele etiket çizildi (`ml/runs/denetim/etiketler/`); örneklerde kutular levhaların üstünde. Sınıf bazlı mAP eğitimde takip edilir. | H1, H2 |
+| 16 | Veri sızıntısı | 🔧 | Bulundu ve ayıklandı ✔: valid/test'in ~%45'i train'deki görsellerin neredeyse aynısı (algısal hash ≤ 12, gözle doğrulandı). `data_temiz.yaml` → temiz valid 296, temiz test 308 görsel. Bu setlerde sınıf başına 7–37 kutu kaldığı için sınıf bazlı skorlar gürültülü olabilir. | H1 |
 | 17 | Yetersiz doğrulama | 🔧 | Ayrı ve hiç dokunulmamış test seti; ayrıca kendi yol videolarımızla gerçek dünya testi. | H2, H4 |
 | 18 | Erken durdurma / aşırı öğrenme | 🔧 | `patience=30`, `epochs=150`; loss eğrileri izlenir; `best.pt` val mAP'e göre seçilir. | H2 |
 | 19 | Eğitim donanımı yetersizliği | 🔧 | 4 GB VRAM için `batch=-1` (VRAM'in ~%60'ı otomatik kullanılır), `cache=False`, `workers=4`. Laptop prize takılı ve Armoury Crate'te Turbo modda olmalı. | H2 |
-| 20 | Eğitim ile gerçek kamera arasındaki fark | 🔧📏 | Eğitimdeki imgsz ile çıkarımdaki imgsz aynı tutulur; kendi videolarımızla doğrulanır. | H2, H4 |
+| 20 | Eğitim ile gerçek kamera arasındaki fark | 🔧📏 | Eğitimdeki imgsz ile çıkarımdaki imgsz aynı tutulur; kendi videolarımızla doğrulanır. Somut kanıt bulundu: risk 63. | H2, H4 |
 
 ### Dışa aktarma ve mobil entegrasyon
 | # | Sorun | Durum | Ne yapıyoruz | Ne zaman |
 |---|---|---|---|---|
-| 21 | ONNX / TFLite dönüşüm hataları | 🔧 | H1'de önce ham modelle dönüşüm denenir (fail-fast); resmi WSL yolu kullanılır. `.tflite` doğruluğu `yolo val` ile `.pt`'ye kıyaslanır (fark ≤ 2 puan mAP olmalı). | H1, H2 |
+| 21 | ONNX / TFLite dönüşüm hataları | 🔧 | Önce ham modelle dönüşüm denendi (fail-fast): Windows'ta onnx2tf yoluyla başarılı ✔. `.tflite` doğruluğu `yolo val` ile `.pt`'ye kıyaslanır (fark ≤ 2 puan mAP olmalı). | H1, H2 |
 | 22 | NMS operatörü uyumsuzluğu | 🟢 | `nms=None` ile dışa aktarılır, yani modelin içinde NMS yok; NMS'i eklenti Kotlin'de yapıyor. | H1 |
 | 23 | Yazılımsal NMS performansı | 🟢 | NMS Dart'ta değil, yerel kodda çalışıyor. | H1 |
 | 24 | Ön işleme uyumsuzluğu | 🟢 | Eklenti imgsz ve stride değerlerini modelin metadata'sından okuyor. Aynı fotoğraf PC'de ve telefonda çalıştırılıp kıyaslanır. | H1 |
 | 25 | Çıktı tensörünün yanlış çözülmesi | 🟢 | Çözümlemeyi eklenti yapıyor; sınıf adları modelin metadata'sından geliyor, elle yazılmış etiket listesi olmadığı için kayma hatası olamaz. | H1 |
-| 26 | INT8 / FP16 seçimi | 📏 | FP32, w8a32 ve INT8 varyantlarının doğruluğu WSL'de, hızı telefonda ölçülür; seçim tabloyla yapılır. | H2 |
+| 26 | INT8 / FP16 seçimi | 📏 | FP32, FP16 ve INT8 varyantlarının doğruluğu Windows'ta, hızı telefonda ölçülür; seçim tabloyla yapılır. | H2 |
 | 27 | Donanım hızlandırıcı uyumsuzluğu | 🟢📏 | Eklentinin GPU → CPU otomatik geçiş zinciri var. Adreno 610'da hangi yolun kullanıldığı logcat'ten doğrulanır. | H1 |
 | 28 | Kamera yönü / koordinatlar | 🟢🔧 | Sensör dönüşünü eklenti hallediyor; uygulama yatay moda kilitlenir. | H3 |
 
@@ -177,7 +184,7 @@ Farklı koşullarda (gündüz/akşam, mümkünse yağmur) testler ve sonuç tabl
 | 29 | Kare kaybı | 🟢📏 | Kare atlanması bilinçli bir tercih: her zaman **en son** kare işlenir. Hesap: 90 km/s = 25 m/s. 8 FPS'te kareler arası ~3 m. ~50 m'den görülen bir levha ~2 sn, yani ~16 kare boyunca görünür. | H1 |
 | 30 | Kuyruk birikmesi | 🟢 | CameraX'in varsayılan "yalnızca en son kare" stratejisi kullanılıyor. Kameranın önünde el sallama testiyle gecikme gözle doğrulanır. | H1 |
 | 31 | Isolate ve bellek yükü | 🟢 | `includeOriginalImage: false` ayarıyla görüntüler Dart'a gelmez; Dart'a yalnızca kutu listesi gelir. | H3 |
-| 32 | Düşük FPS | 📏🔧 | H1'de ölçülür. Sırayla denenecekler: GPU → imgsz 480/416/320 → INT8 → YOLO26n. | H1, H2 |
+| 32 | Düşük FPS | 📏🔧 | H1'de ölçülür. Sırayla denenecekler: GPU → INT8 → imgsz 480 → YOLO26n. imgsz 320 kullanılmaz (risk 7). | H1, H2 |
 | 33 | Isınma ve pil | 📏🔧 | `YOLOStreamingConfig` ile kare hızı üst sınırı (ör. 10 FPS) konur; 30 dakikalık test; araç şarjı kullanılır. | H4 |
 | 34 | Yüksek çözünürlükte bellek | 🟢🔧 | Kamera 720p (4K değil) ve görüntü kopyası Dart'a aktarılmıyor. | H3 |
 | 35 | Platformlar arası performans farkı | ⚠️📏 | Her platformun ölçümü ayrı raporlanır. | H5, H6 |
@@ -211,15 +218,16 @@ Farklı koşullarda (gündüz/akşam, mümkünse yağmur) testler ve sonuç tabl
 |---|---|---|---|
 | 52 | ‼️ **Yatay çevirme artırımı sol/sağ levhaları bozar.** Ultralytics varsayılan olarak görüntülerin %50'sini aynalar. Bu durumda `keepleft` ↔ `keepright`, `dangerousleft` ↔ `dangerousright`, `donotturnleft` ↔ `donotturnright` görüntüleri yanlış etiketle öğrenilir. | 🔧 | Eğitimde **`fliplr=0.0`**. |
 | 53 | Veri setinde yalnızca 20 sınıf var; hız levhalarından sadece 30, 50 ve 70 mevcut. Model 80, 90 veya 120 levhasını bunlardan biri sanabilir. | ⚠️🔧 | Kapsam raporda net yazılır. Hız sınıfları için daha yüksek güven eşiği kullanılır; sahada görülen kapsam dışı levhalar ayrıca kaydedilir. |
-| 54 | Ultralytics'in TFLite dışa aktarması Windows'ta desteklenmiyor. | 🔧 | WSL2 Ubuntu kuruldu ✔. Yedek: Google Colab. |
+| 54 | Ultralytics'in yeni `litert` dışa aktarması Windows'ta desteklenmiyor. | 🔧 | `format=saved_model` (onnx2tf) yolu Windows'ta `.tflite` üretiyor ✔. Bu yolda modelin girişi NHWC biçiminde (yeni `litert` formatında NCHW). Eklentinin bunu doğru okuduğu H1'de telefonda doğrulanacak. |
 | 55 | Xiaomi/MIUI: USB'den uygulama yüklemek için ek ayar gerekiyor, MIUI pil tasarrufu uygulamayı kapatabiliyor. | 🔧 | Geliştirici seçeneklerinde "USB hata ayıklama" ve "USB üzerinden yükle" açılır (Mi hesabı/SIM isteyebilir). Uygulama hep ön planda ve ekran açık çalışır. |
 | 56 | Sürüm kayması: Ultralytics ve eklenti çok sık güncelleniyor (ör. 8.4.83 sürümünde `tflite` formatı kaldırıldı). | 🔧 | H1 başarılı olunca sürümler sabitlenir. |
 | 57 | Lisanslar | 🔧 | Veri seti CC BY 4.0: raporda ve uygulamada atıf zorunlu. Ultralytics ve eklenti AGPL-3.0: uygulama dağıtılırsa kaynak kodu açık olmalı (GitHub'da public repo yeterli). |
 | 58 | Disk alanı (C: sürücüsünde ~60 GB boş) | 🔧 | Android emülatörü kurulmadı (gerçek telefon kullanılıyor); `ml/runs/` klasörü düzenli temizlenir. |
 | 59 | GPU sürücüsü CUDA 12.7'yi destekliyor | 🔧 | PyTorch, sürücüyle uyumlu olan CUDA 12.6 derlemesiyle kuruldu ✔. |
 | 60 | *(Kurulumda yaşandı)* Yeni Android cmdline-tools (23.0) paket adlarında `ndk/28.2…` yazımını bekliyor, Flutter 3.47 ise `ndk;28.2…` gönderiyor. Bu yüzden NDK otomatik kurulamadı ve derleme durdu. | 🔧 | NDK elle `ndk/28.2.13676358` yazımıyla kuruldu ✔. İleride Flutter yeni bir NDK sürümü isterse aynı yöntemle kurulur (bkz. `docs/KURULUM.md`). |
-| 61 | *(Kurulumda yaşandı)* `litert-torch` paketi `torch<2.15` istiyor. Ultralytics bu paketi dışa aktarma sırasında otomatik kurunca torch'u çalışan süreç içinde değiştirdi ve süreç çöktü (`duplicate registrations`). | 🔧 | Paketler artık kurulu; temiz bir süreçte dönüşüm başarılı ✔. WSL ortamı bundan sonra torch 2.14.1'de sabit tutulmalı (`pip install -U torch` yapılmamalı). |
-| 62 | Ultralytics varsayılan olarak anonim kullanım verisi gönderiyor (`sync=True`); bu, "tam çevrimdışı" iddiasıyla çelişir. | 🔧 | İki ortamda da `yolo settings sync=False` yapıldı ✔. |
+| 61 | Dışa aktarma paketleri (TensorFlow, onnx2tf) eğitimle aynı ortamda. TensorFlow kurulumu `protobuf` ve `onnx` sürümlerini düşürdü. Ayrıca Ultralytics eksik paketi dışa aktarma *sırasında* kurmaya kalkarsa süreç çökebilir. | 🔧 | Paketler önceden ve sabit sürümle kuruldu (`ml/requirements.txt`) ✔. torch ve GPU eğitimi etkilenmedi ✔. Paketler `pip install -U` ile güncellenmeyecek. |
+| 62 | Ultralytics varsayılan olarak anonim kullanım verisi gönderiyor (`sync=True`); bu, "tam çevrimdışı" iddiasıyla çelişir. | 🔧 | `yolo settings sync=False` yapıldı ✔. |
+| 63 | **Veri setinin büyük kısmı Google Street View ekran görüntüsü** (kenarlarda tarayıcı, görev çubuğu ve mini harita var). Bu görüntüler net ve bulanıklıksız; telefon kamerasının ön camdan çektiği görüntüye benzemiyor. Model tarayıcı arayüzü gibi alakasız ipuçlarını da öğrenebilir. | 🔧📏 | Eğitimde bulanıklık, renk ve parlaklık artırımları kullanılır. H4'te kendi telefon görüntülerimizden zor örnekler etiketlenip eğitime eklenir. Temiz testin yanında kendi videolarımızla ayrıca ölçüm yapılır. |
 
 ---
 
