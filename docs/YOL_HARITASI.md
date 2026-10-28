@@ -148,7 +148,14 @@ Ortam kuruldu ve araçlar doğrulandı (bkz. `docs/KURULUM.md`):
 Farklı koşullarda (gündüz/akşam, mümkünse yağmur) testler ve sonuç tablosu. Rapor bölümleri: mimari, ölçümler, sınırlar, demo videosu.
 
 ### Hafta 6 — 3–9 Aralık: Windows uygulaması + tampon
-Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runtime (GPU) + OpenCV. Kamera okuma, çıkarım ve ses ayrı thread'lerde çalışır. Filtre, cooldown ve ses kuyruğu kuralları mobil sürümle aynıdır. Ön işleme ve son işlemede Ultralytics'in kendi kodu birebir kullanılır. Canlı test bu bilgisayarda web kamerasıyla yapılır. Kalan süre, önceki haftalardan kalan işler için tampondur.
+Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runtime + OpenCV. Kamera okuma Ultralytics'in akış iş parçacığında, ses `winsound` ile eşzamansız çalınır. Filtre, cooldown ve ses kuyruğu kuralları mobil sürümle aynıdır. Ön işleme ve son işlemede Ultralytics'in kendi kodu birebir kullanılır. Canlı test bu bilgisayarda web kamerasıyla yapılır. Kalan süre, önceki haftalardan kalan işler için tampondur.
+
+**Durum (29 Ekim): ilk sürüm erken hazırlandı** (`desktop/app.py`, model `desktop/levha.onnx`)
+- Levha kataloğu `mobile/lib/alerts.dart`'tan okunuyor (tek kaynak); sesler mobil uygulamanınkiyle aynı WAV dosyaları.
+- Kural öz-testi geçiyor (`app.py --test`).
+- Demo videosunda "Dur → Hız sınırı otuz → Yol ver" uyarıları sırayla çalındı. İkinci levha aslında hız 50'ydi: demo videosu görüntüyü sündürdüğü için yanlış okundu. Bozulmamış görüntüde `.pt` ve `.onnx` speed50 0,94 veriyor.
+- CPU'da (i7-12700H) çıkarım ~22 ms, uçtan uca ~33 FPS → GPU gerekmiyor. (`onnxruntime-gpu` 1.31 CUDA 13 istiyor; sürücü 566 CUDA 12.7'de kaldığı için zaten çalışmıyor.)
+- Eksik: web kamerasıyla canlı deneme (senin yapman gerekiyor), ayar/eşik arayüzü.
 
 ---
 

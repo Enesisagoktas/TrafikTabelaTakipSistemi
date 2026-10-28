@@ -81,8 +81,17 @@ yolo val model=runs/detect/v2/weights/best_tflite/best_float16.tflite data=data/
 **Windows uygulaması için ONNX dışa aktarma (Hafta 6):**
 ```powershell
 yolo export model=runs/detect/v2/weights/best.pt format=onnx imgsz=640
+Copy-Item runs\detect\v2\weights\best.onnx ..\desktop\levha.onnx
 ```
 (ONNX çıkışı piksel koordinatlıdır; Windows uygulamasında Ultralytics'in son işlemesi bu şekilde bekler.)
+
+**Windows uygulaması (proje kökünde):**
+```powershell
+ml\.venv\Scripts\python desktop\app.py            # web kamerası; çıkış: q
+ml\.venv\Scripts\python desktop\app.py yol.mp4    # video dosyası
+ml\.venv\Scripts\python desktop\app.py --test     # kural öz-testi
+```
+CPU'da ~33 FPS. `onnxruntime-gpu` 1.31 CUDA 13 istediği için (sürücü 566 en fazla 12.7 destekliyor) GPU kullanılmıyor; gerek de yok.
 
 **Mobil uygulama (`mobile\` klasöründe):**
 ```powershell

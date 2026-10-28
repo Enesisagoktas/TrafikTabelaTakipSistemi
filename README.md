@@ -9,7 +9,7 @@
 |---|---|
 | `ml/` | Veri seti, model eğitimi (GPU) ve `.tflite` / `.onnx` dışa aktarma |
 | `mobile/` | Android uygulaması (Flutter + `ultralytics_yolo`) — ilk ürün |
-| `desktop/` | Windows uygulaması (Python + ONNX Runtime) — en son yapılacak |
+| `desktop/` | Windows uygulaması (Python + ONNX Runtime + web kamerası) — ilk sürüm hazır |
 | `docs/` | Belgeler |
 
 Veri seti: [Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye), Hootbu, CC BY 4.0.

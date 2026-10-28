@@ -9,7 +9,7 @@ albumentations==2.0.8   # Ultralytics bunu görünce eğitimde bulanıklaştırm
 imagehash==4.3.2        # veri sızıntısı denetimi (yakın kopya)
 onnx==1.22.0
 onnxslim==0.1.98
-onnxruntime-gpu==1.31.1
+onnxruntime-gpu==1.31.1  # GPU sağlayıcısı CUDA 13 istiyor (sürücü 12.7'de) -> pratikte CPU'da çalışır, yeterli
 
 # .tflite dışa aktarma (format=saved_model -> onnx2tf). Ultralytics'in Python 3.12 için seçtiği sürümler.
 tensorflow==2.19.0

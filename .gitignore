@@ -6,6 +6,7 @@ ml/models/
 __pycache__/
 *.pt
 *.onnx
+!desktop/levha.onnx
 *_saved_model/
 *.cache
 *.npy
