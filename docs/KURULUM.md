@@ -84,9 +84,18 @@ yolo export model=runs/detect/v2/weights/best.pt format=onnx imgsz=640
 ```
 (ONNX çıkışı piksel koordinatlıdır; Windows uygulamasında Ultralytics'in son işlemesi bu şekilde bekler.)
 
-**Telefonda çalıştırma (`mobile\` klasöründe):**
+**Mobil uygulama (`mobile\` klasöründe):**
 ```powershell
 cd C:\Projeler\TrafikTabelaTakipSistemi\mobile
+# yeni model eğitildiyse:
+Copy-Item ..\ml\runs\detect\v2\weights\best_tflite\best_float16.tflite assets\models\levha.tflite
+.\tool\sesleri_uret.ps1           # 20 uyarı sesini Türkçe "Tolga" sesiyle üretir (cümleler lib\alerts.dart'tan)
+flutter test                      # uyarı mantığı testleri
+flutter build apk --release       # build\app\outputs\flutter-apk\app-release.apk
+```
+
+**Telefonda çalıştırma:**
+```powershell
 adb devices            # telefon "device" olarak görünmeli
 flutter run            # geliştirme
 flutter run --release  # FPS ölçümü her zaman release modda yapılır

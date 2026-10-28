@@ -243,6 +243,7 @@
     <li>Uçak modunda (internet tamamen kapalıyken) tam çalışma testi.</li>
   </ul></div>
   <div class="gate"><b>Hafta sonunda:</b> Ekrandaki ya da kâğıda basılmış levha fotoğraflarıyla "levhayı gör → sesli söyle" baştan sona çalışıyor, uçak modunda da çalışıyor.</div>
+  <div class="gate"><b><span class="ok">✓</span> Kod erken hazırlandı (29 Ekim), telefonda henüz denenmedi:</b> Uyarı mantığı (filtre, tekrar önleme, ses sırası) yazıldı ve 12 otomatik testin hepsi geçiyor. Kamera ekranı, model ve 20 Türkçe uyarı sesi (bilgisayarın Türkçe "Tolga" sesiyle geçici olarak üretildi) uygulamaya bağlandı ve APK derlendi. Uygulamanın <b>internet izni hiç yok</b>, yani internete çıkması işletim sistemi tarafından engelleniyor. Zayıf çıkan hız levhaları ve yaya geçidi bilgi levhası için daha yüksek güven eşiği kondu.</div>
 </div>
 
 <div class="week">
@@ -351,7 +352,7 @@
     <tr><td class="num">39</td><td>Tekrar önleme süresi kötü ayarlanır: çok uzunsa yeni levha kaçar, çok kısaysa ses tekrar eder</td><td>İki şartlı kural kullanılıyor: aynı levha için en az 5 saniye sessizlik, ayrıca levha 2 saniye görünmez olduktan sonra yeniden uyarı hakkı. Otomatik testlerle doğrulanacak.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
     <tr><td class="num">40</td><td>Nesne takibi levhayı kaybedip aynı levhayı tekrar söylüyor</td><td>Nesne takibi hiç kullanmıyoruz. "Levha türü + zaman" kuralı (39) bu sorunu kökten ortadan kaldırıyor.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
     <tr><td class="num">41</td><td>Takip ile tekrar önleme birbirine karışıyor</td><td>40 ile aynı: takip olmadığı için böyle bir karışıklık da yok.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
-    <tr><td class="num">42</td><td>Ses geç çalıyor</td><td>Sesler uygulama açılırken belleğe yüklenir. Cümleler kısa (en fazla 1,5 saniye). Gecikme videoyla ölçülecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3, H4</td></tr>
+    <tr><td class="num">42</td><td>Ses geç çalıyor</td><td>Sesler uygulamanın içinde, kısa (en fazla 1,5 saniye) yerel dosyalar. Gecikme telefonda ölçülecek; gerekirse sesler açılışta belleğe yüklenecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3, H4</td></tr>
     <tr><td class="num">43</td><td>Sesler üst üste çalıyor</td><td>Aynı anda tek ses çalar, diğerleri sıraya girer.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
     <tr><td class="num">44</td><td>Önemli uyarı, önemsiz uyarının arkasında kalıyor</td><td>3 öncelik seviyesi var (bkz. Bölüm 8). Önemli uyarı sırada öne geçer.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
     <tr><td class="num">45</td><td>Ses sırası uzuyor, eski uyarılar okunuyor</td><td>Sırada en fazla 2 uyarı bekler; 3 saniyeden eski uyarı atılır.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
@@ -363,7 +364,7 @@
 <table>
   <thead><tr><th>#</th><th style="width:27%">Sorun</th><th>Ne yapıyoruz?</th><th>Durum</th><th>Ne zaman</th></tr></thead>
   <tbody>
-    <tr><td class="num">47</td><td>Model ya da ses dosyaları uygulamaya gömülmezse internetsiz çalışmaz</td><td>Model ve sesler uygulamanın içinde. Uçak modunda test edilecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
+    <tr><td class="num">47</td><td>Model ya da ses dosyaları uygulamaya gömülmezse internetsiz çalışmaz</td><td>Model ve sesler uygulamanın içinde. Uygulamanın internet izni hiç yok <span class="ok">✓</span>. Uçak modunda da test edilecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H3</td></tr>
     <tr><td class="num">48</td><td>Levhanın hangi şeride ait olduğu anlaşılamıyor</td><td>Kapsam dışı. Sistem gördüğü levhayı söyler, şerit yorumu yapmaz. Raporda yazılacak.</td><td class="st"><span class="tag t-sin">Kabul edilen sınır</span></td><td class="when">H5</td></tr>
     <tr><td class="num">49</td><td>PC ve telefon sürümü farklı sonuç veriyor</td><td>Aynı 50 fotoğraf bütün model formatlarında denenip karşılaştırılacak.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H2, H6</td></tr>
     <tr><td class="num">50</td><td>Yol testi yetersiz kalıyor</td><td>Ölçüm formu ve video kaydı kullanılacak. Kural: sürücü telefona dokunmaz.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H4, H5</td></tr>
@@ -397,7 +398,7 @@
   <li><b>Telefonu hazırla:</b> Ayarlar → Telefon hakkında → "MIUI sürümü" yazısına 7 kez dokun. Sonra Ek ayarlar → Geliştirici seçenekleri bölümünde <b>USB hata ayıklama</b> ve <b>USB üzerinden yükle</b> seçeneklerini aç. Telefonu USB ile bilgisayara bağla ve ekranda çıkan "izin ver" sorusunu onayla.</li>
   <li class="done"><b>Veri setini indir:</b> Yapıldı. Sürüm 17 (augmentasyonsuz) indirildi ve <i>ml/data/levha</i> klasörüne yerleştirildi.</li>
   <li><b>Telefon tutucu al:</b> Ön cama yapışan vantuzlu bir tutucu.</li>
-  <li><b>Sesleri kaydet:</b> Bölüm 8'deki 20 cümleyi sessiz bir odada telefonla kaydet. İstersen sesleri bilgisayarda yapay sesle (TTS) bir kez üretip uygulamaya gömebiliriz.</li>
+  <li><b>Sesler (isteğe bağlı):</b> Geçici sesler bilgisayarın Türkçe "Tolga" sesiyle üretilip uygulamaya kondu. Kendi sesini kullanmak istersen Bölüm 8'deki cümleleri kaydet; aynı adla (<i>mobile/assets/sounds/</i>) değiştirmen yeterli.</li>
 </ul>
 
 <!-- ============ SESLER ============ -->

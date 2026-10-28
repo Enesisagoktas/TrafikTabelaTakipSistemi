@@ -1,122 +1,112 @@
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:ultralytics_yolo/ultralytics_yolo.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'alerts.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+  await WakelockPlus.enable();
+  // Uyarı çalarken çalan müziği geçici olarak kıs (risk 46).
+  await (await AudioSession.instance).configure(const AudioSessionConfiguration(
+    androidAudioAttributes: AndroidAudioAttributes(
+      contentType: AndroidAudioContentType.speech,
+      usage: AndroidAudioUsage.assistanceNavigationGuidance,
+    ),
+    androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
+  ));
+  runApp(const MaterialApp(title: 'Trafik Asistanı', debugShowCheckedModeBanner: false, home: DetectorScreen()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class DetectorScreen extends StatefulWidget {
+  const DetectorScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<DetectorScreen> createState() => _DetectorScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _DetectorScreenState extends State<DetectorScreen> {
+  // Hız levhaları birbirine, pedestrian_info başka mavi levhalara karışıyor (YOL_HARITASI, Hafta 2 sonuçları).
+  final _filter = DetectionFilter(classMinConf: {'speed30': 0.65, 'speed50': 0.65, 'speed70': 0.65, 'pedestrian_info': 0.7});
+  final _cooldown = Cooldown();
+  final _queue = AlertQueue();
+  final _player = AudioPlayer();
+  bool _speaking = false;
+  String _banner = '';
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showDisclaimer());
   }
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  void _onResult(List<YOLOResult> results) {
+    final now = DateTime.now();
+    final seen = _filter.update(results.map((r) => (name: r.className, conf: r.confidence, height: r.normalizedBox.height)));
+    for (final n in _cooldown.update(seen, now)) {
+      _queue.add(n, signs[n]?.priority ?? 3, now);
+    }
+    _speak();
+  }
+
+  /// Sıradaki uyarıları tek tek çalar; aynı anda yalnızca bir ses (risk 43).
+  Future<void> _speak() async {
+    if (_speaking) return;
+    _speaking = true;
+    try {
+      for (var n = _queue.next(DateTime.now()); n != null; n = _queue.next(DateTime.now())) {
+        if (mounted) setState(() => _banner = signs[n]?.text ?? n!);
+        await _player.setAsset('assets/sounds/$n.wav');
+        await _player.play(); // çalma bitince döner
+      }
+    } finally {
+      _speaking = false;
+    }
+  }
+
+  Future<void> _showDisclaimer() => showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Deneysel prototip'),
+          content: const Text(
+            'Bu uygulama sürücüye yardımcı olmak için geliştirilmiş bir öğrenci projesidir; güvenlik sistemi değildir. '
+            'Trafik levhalarına ve kurallara her zaman kendiniz dikkat edin.\n\n'
+            'Veri seti: Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0.',
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Anladım'))],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+      );
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(children: [
+          YOLOView(
+            modelPath: 'assets/models/levha.tflite',
+            task: YOLOTask.detect,
+            confidenceThreshold: 0.4,
+            onResult: _onResult,
+          ),
+          if (_banner.isNotEmpty)
+            Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
+                child: Text(_banner, style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
+              ),
+            ),
+        ]),
+      );
 }

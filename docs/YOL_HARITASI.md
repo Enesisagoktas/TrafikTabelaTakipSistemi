@@ -48,11 +48,9 @@
 Dart tarafındaki iş her karede en fazla birkaç kutuluk bir liste olduğu için hafif. Bu yüzden ayrıca bir Isolate gerekmiyor. Ağır iş zaten eklentinin yerel thread'inde yapılıyor.
 
 **Kod düzeni (`mobile/lib/`):**
-- `main.dart`: uygulama ve yatay mod kilidi
-- `screens/detector_screen.dart`: YOLOView ve uyarı şeridi
-- `logic/detection_filter.dart`, `logic/cooldown_manager.dart`, `logic/alert_queue.dart`: saf Dart, cihazsız birim testi yapılabilir
-- `audio/alert_player.dart`: ses önyükleme ve oynatma
-- `config/sign_catalog.dart`: 20 sınıfın Türkçe adı, ses dosyası ve önceliği (tek kaynak)
+- `alerts.dart`: `signs` kataloğu (20 sınıfın Türkçe cümlesi ve önceliği; tek kaynak), `DetectionFilter`, `Cooldown`, `AlertQueue`. Saf Dart, cihazsız testleri `test/alerts_test.dart`'ta.
+- `main.dart`: yatay mod, ekran açık, ses oturumu (müziği kısma), açılış uyarısı, YOLOView, ses oynatma ve uyarı şeridi.
+- `assets/models/levha.tflite` (v2 FP16 modeli), `assets/sounds/<sınıf>.wav` (`tool/sesleri_uret.ps1` ile Windows'un Türkçe "Tolga" sesinden üretildi; kendi kaydınla aynı adla değiştirilebilir).
 
 ---
 
@@ -130,6 +128,13 @@ Ortam kuruldu ve araçlar doğrulandı (bkz. `docs/KURULUM.md`):
 5. **Uçak modunda** release APK ile tam çalışma testi.
 
 **Kapı:** Masada, ekrandaki veya basılı levha fotoğraflarıyla "gör → konuş" uçtan uca çalışıyor; uçak modunda da çalışıyor.
+
+**Durum (29 Ekim): kod hazır, telefonda henüz denenmedi.**
+- Uyarı mantığı (filtre, tekrar önleme, ses sırası) test öncelikli yazıldı; 12 birim testi geçiyor ✔.
+- Ekran, model, sesler ve açılış uyarısı bağlandı. `flutter analyze` temiz. Release APK derlendi (82,9 MB, model ve 20 ses içinde) ✔.
+- Hız levhaları için 0,65, pedestrian_info için 0,70 güven eşiği (Hafta 2'de zayıf çıkan sınıflar).
+- Release APK'da **INTERNET izni yok** (aapt2 ile doğrulandı) ✔.
+- Eksik: telefonda deneme (Hafta 1'in kalanıyla birlikte), ayar ekranı (eşik/zoom), sesleri önyükleme. Bunlar telefonda ölçüm yapıldıktan sonra eklenecek.
 
 ### Hafta 4 — 19–25 Kasım: Saha testi 1 + iyileştirme
 1. **Güvenlik kuralı:** Sürücü telefona hiç dokunmaz. Telefonu yolcu ayarlar; telefon vantuzlu tutucuda durur.
@@ -215,7 +220,7 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 | 39 | Cooldown'un yanlış davranması | 🔧 | İki koşullu kural: aynı sınıf için **en az 5 sn sessizlik** ve levha **≥2 sn görünmez olduktan sonra** yeniden kurulma. Böylece tekrar önlenir, kısa süre sonra gelen yeni aynı levha da kaçmaz. Birim testiyle doğrulanır. | H3 |
 | 40 | IoU takip hataları | 🔧 | Kimlik takibi **kullanmıyoruz**; sınıf ve zaman bazlı kural (39) kimlik kaybı sorununu ortadan kaldırır. | H3 |
 | 41 | Takip ve cooldown entegrasyonu | 🔧 | 40 ile aynı. | H3 |
-| 42 | Sesli uyarı gecikmesi | 🔧📏 | Sesler açılışta belleğe önyüklenir; cümleler kısadır (≤1,5 sn). "Levha göründü → ses başladı" gecikmesi videoyla ölçülür. | H3, H4 |
+| 42 | Sesli uyarı gecikmesi | 🔧📏 | Cümleler kısa (≤1,5 sn), sesler uygulamanın içinde yerel WAV olarak duruyor. Şu an her uyarıda yerelden yükleniyor. "Levha göründü → ses başladı" gecikmesi telefonda ölçülecek; gerekirse sesler önyüklenecek. | H3, H4 |
 | 43 | Seslerin çakışması | 🔧 | Tek oynatıcı ve kuyruk; aynı anda yalnızca bir ses çalar. | H3 |
 | 44 | Önceliklendirme hataları | 🔧 | 3 seviye (bkz. Bölüm 6). Yüksek öncelikli uyarı kuyrukta öne geçer. | H3 |
 | 45 | Ses kuyruğunun uzaması | 🔧 | Kuyrukta en fazla 2 uyarı bekler; 3 sn'den eski uyarılar atılır. | H3 |
@@ -224,7 +229,7 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 ### Çevrimdışı çalışma, kapsam ve test
 | # | Sorun | Durum | Ne yapıyoruz | Ne zaman |
 |---|---|---|---|---|
-| 47 | Çevrimdışı dosya bağımlılıkları | 🔧 | Model ve sesler `assets/` içinde; eklentinin "model ID ile indirme" özelliği kullanılmıyor. Release APK uçak modunda test edilir. | H3 |
+| 47 | Çevrimdışı dosya bağımlılıkları | 🔧 | Model ve sesler `assets/` içinde; eklentinin "model ID ile indirme" özelliği kullanılmıyor. Release APK'da INTERNET izni yok ✔: uygulama işletim sistemi düzeyinde internete çıkamaz. Uçak modunda da test edilecek. | H3 |
 | 48 | Yol bağlamının anlaşılamaması | ⚠️ | Kapsam dışı: sistem gördüğü levhayı söyler, levhanın hangi şeride ait olduğunu yorumlamaz. Raporda yazılır. | H5 |
 | 49 | ONNX ile TFLite'ın farklı sonuç vermesi | 📏 | Aynı 50 test görüntüsünde `.pt`, `.tflite` ve `.onnx` sonuçları kıyaslanır. | H2, H6 |
 | 50 | Yetersiz saha testi | 🔧 | Yapılandırılmış ölçüm formu ve video kaydı. Güvenlik kuralı: sürücü telefona dokunmaz. | H4, H5 |
