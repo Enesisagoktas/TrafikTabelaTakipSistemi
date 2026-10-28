@@ -37,6 +37,9 @@ class _DetectorScreenState extends State<DetectorScreen> {
   final _player = AudioPlayer();
   bool _speaking = false;
   String _banner = '';
+  // Hafta 1 ölçümü: FPS / çıkarım süresi ve GPU-CPU karşılaştırması.
+  bool _gpu = true;
+  String _perf = '';
 
   @override
   void initState() {
@@ -92,10 +95,34 @@ class _DetectorScreenState extends State<DetectorScreen> {
         backgroundColor: Colors.black,
         body: Stack(children: [
           YOLOView(
+            key: ValueKey(_gpu), // useGpu yalnızca açılışta okunur; değişince görünüm yeniden kurulur
             modelPath: 'assets/models/levha.tflite',
             task: YOLOTask.detect,
             confidenceThreshold: 0.4,
+            useGpu: _gpu,
             onResult: _onResult,
+            onPerformanceMetrics: (m) => setState(
+              () => _perf = '${m.fps.toStringAsFixed(1)} FPS · ${m.processingTimeMs.toStringAsFixed(0)} ms',
+            ),
+            onModelError: (e, _, _) => setState(() => _perf = 'Model hatası: $e'),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(left: 12),
+              color: Colors.black54,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(_perf, style: const TextStyle(color: Colors.white)),
+                TextButton(
+                  onPressed: () => setState(() {
+                    _gpu = !_gpu;
+                    _perf = '';
+                  }),
+                  child: Text(_gpu ? 'GPU' : 'CPU'),
+                ),
+              ]),
+            ),
           ),
           if (_banner.isNotEmpty)
             Align(
