@@ -3,11 +3,13 @@
 Levha kataloğu (cümle + öncelik) mobile/lib/alerts.dart'tan okunur, sesler mobile/assets/sounds/*.wav.
 Çalıştırma (proje kökünde):
     ml\\.venv\\Scripts\\python desktop\\app.py           # web kamerası (0)
-    ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4   # video dosyası
+    ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4   # video dosyası (log: yol.log.csv)
+    ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4 diger_model.onnx   # başka bir modelle
     ml\\.venv\\Scripts\\python desktop\\app.py --test    # kural öz-testi
 Çıkış: q
 """
 
+import os
 import re
 import sys
 import time
@@ -96,21 +98,27 @@ def selftest():
     print("öz-test geçti")
 
 
-def main(source):
+def main(source, model_path=MODEL):
     import cv2
     import numpy as np
     from PIL import Image, ImageDraw, ImageFont
     from ultralytics import YOLO
 
     font = ImageFont.truetype("arial.ttf", 44)
-    model = YOLO(str(MODEL), task="detect")
+    model = YOLO(str(model_path), task="detect")
     filt, cool, queue = DetectionFilter(class_min_conf=CLASS_MIN_CONF), Cooldown(), AlertQueue()
     busy_until, banner, t_prev = 0.0, "", time.perf_counter()
+    # Video dosyasında saat videonun kendi zamanıdır (kurallar gerçek sürüşteki gibi işler) ve her şey loglanır.
+    video = isinstance(source, str)
+    fps = cv2.VideoCapture(source).get(cv2.CAP_PROP_FPS) if video else 0
+    log = open(Path(source).with_suffix(f".{Path(model_path).stem}.log.csv") if video else os.devnull, "w", encoding="utf-8")
+    log.write("zaman_sn;olay;sinif;guven\n")
     # CPU: i7-12700H'de çıkarım ~22 ms, uçtan uca ~33 FPS (29 Ekim). onnxruntime-gpu 1.31 CUDA 13 istiyor,
     # GPU sürücüsü (566) en fazla CUDA 12.7 destekliyor; gerek de yok.
-    for r in model.predict(source=source, stream=True, imgsz=640, conf=0.4, device="cpu", verbose=False):
-        now = time.monotonic()
+    for i, r in enumerate(model.predict(source=source, stream=True, imgsz=640, conf=0.4, device="cpu", verbose=False)):
+        now = i / fps if video else time.monotonic()
         dets = [(r.names[int(k)], float(p), float(b[3])) for k, p, b in zip(r.boxes.cls, r.boxes.conf, r.boxes.xywhn)]
+        log.writelines(f"{now:.2f};tespit;{n};{p:.2f}\n" for n, p, _ in dets)
         for n in cool.update(filt.update(dets), now):
             queue.add(n, SIGNS[n][1], now)
         if now >= busy_until and (n := queue.next(now)):  # aynı anda tek ses
@@ -119,7 +127,8 @@ def main(source):
                 busy_until = now + w.getnframes() / w.getframerate()
             winsound.PlaySound(str(wav), winsound.SND_FILENAME | winsound.SND_ASYNC)
             banner = SIGNS[n][0]
-            print(f"uyarı: {banner}", flush=True)
+            log.write(f"{now:.2f};uyari;{n};\n")
+            print(f"{now:6.1f} sn  uyarı: {banner}", flush=True)
         frame = r.plot()
         t = time.perf_counter()
         cv2.putText(frame, f"{1 / max(t - t_prev, 1e-6):.0f} FPS", (10, frame.shape[0] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
@@ -131,9 +140,10 @@ def main(source):
         cv2.imshow("Trafik Asistani (q: cikis)", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
+    log.close()
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "0"
-    selftest() if arg == "--test" else main(int(arg) if arg.isdigit() else arg)
+    selftest() if arg == "--test" else main(int(arg) if arg.isdigit() else arg, *sys.argv[2:3])

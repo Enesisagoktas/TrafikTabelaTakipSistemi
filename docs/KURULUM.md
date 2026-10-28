@@ -88,9 +88,11 @@ Copy-Item runs\detect\v2\weights\best.onnx ..\desktop\levha.onnx
 **Windows uygulaması (proje kökünde):**
 ```powershell
 ml\.venv\Scripts\python desktop\app.py            # web kamerası; çıkış: q
-ml\.venv\Scripts\python desktop\app.py yol.mp4    # video dosyası
+ml\.venv\Scripts\python desktop\app.py yol.mp4    # video dosyası -> yol.levha.log.csv (zaman_sn;olay;sinif;guven)
+ml\.venv\Scripts\python desktop\app.py yol.mp4 ml\runs\detect\v3\weights\best.onnx   # başka modelle -> yol.best.log.csv
 ml\.venv\Scripts\python desktop\app.py --test     # kural öz-testi
 ```
+Video dosyasında saat videonun kendi zamanıdır; kurallar (oylama, tekrar önleme) gerçek sürüşteki gibi işler. Araç içi videolar `ml\data\videolar\` klasörüne konur (git'e girmez).
 CPU'da ~33 FPS. `onnxruntime-gpu` 1.31 CUDA 13 istediği için (sürücü 566 en fazla 12.7 destekliyor) GPU kullanılmıyor; gerek de yok.
 
 **Mobil uygulama (`mobile\` klasöründe):**

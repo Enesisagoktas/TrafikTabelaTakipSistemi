@@ -120,6 +120,32 @@ Ortam kuruldu ve araçlar doğrulandı (bkz. `docs/KURULUM.md`):
 - **Zayıf sınıflar** (temiz test AP50): pedestrian_info 0,55 (precision 0,53, başka mavi levhaları bu sınıf sanıyor), speed70 0,70 (recall 0,53, 50 ya da 30 sanıyor), speed30 0,79, giveway 0,83. Sık karışmalar: 70→50, okul geçidi ↔ yaya levhaları, girilmez→dur, sağa dönülmez→sola dönülmez (2 kez).
 - Sonraki adımlar: uygulamada hız levhaları ve pedestrian_info için daha yüksek güven eşiği (Hafta 3); bu sınıflardan kendi fotoğraflarımızı ekleyip yeniden eğitmek (Hafta 4).
 
+**Hata analizi (29 Ekim, v2, orijinal test, güven ≥ 0,4)**: `ml/scripts/hata_analizi.py`, kırpılmış kaçırmalar `docs/img/kacirilanlar_v2.jpg`
+
+| Sınıf | Doğru | Kaçırılan / karışan | Kaçırılanın kısa kenarı | Doğrunun kısa kenarı | Yanlış pozitif |
+|---|---|---|---|---|---|
+| speed70 | 34 | 17 (13 hiç, 4 → speed50) | **9 px** | 16 px | 6 |
+| speed30 | 34 | 5 (hepsi hiç) | **8 px** | 25 px | 8 |
+| giveway | 33 | 10 (hepsi hiç) | **8 px** | 18 px | 2 |
+| pedestrian_info | 26 | 7 (5 hiç) | 25 px | 16 px | **10** (9'u arka plan) |
+
+- Hız ve yol ver levhalarındaki kaçırmaların çoğu **çok uzaktaki (8–9 px) levhalar**, yani sorun çözünürlük. Sürüşte levha yaklaştıkça büyüdüğü için pratik etkisi daha küçük; asıl ölçülmesi gereken "uyarı levhadan önce geldi mi" (saha testi).
+- Gerçek hatalar: net bir 70'in 50 sanılması (4 kez) ve pedestrian_info'nun boş yerde görülmesi (9 kez).
+- Veri çeşitliliği eksiği: **sarı zeminli ve geçici levhalar** (okul bölgesi "30", yol çalışması panosunda "yol ver", mavi bilgi panosuna basılmış "70") az temsil ediliyor. Hafta 4'te bunlardan kendi fotoğraflarımız eklenmeli.
+- Veri setinde **etiket hatası** şüphesi: bir pedestrian_info etiketinin kırpıntısında levha yok.
+- Seçenek (telefon hızı yeterse): daha büyük girişle eğitim (imgsz 800) uzaktaki küçük levhaları iyileştirir, ama çıkarımı ~1,6 kat yavaşlatır. Karar Hafta 1'deki telefon ölçümünden sonra.
+
+**v3 deneyi (29 Ekim): zayıf sınıfları çoğaltma.** `ml/scripts/agirlikli_liste.py`, zayıf 4 sınıfın geçtiği 1.012 eğitim görselini listeye ikinci kez ekledi. v2'den 15 epoch eğitildi (`AdamW lr0=0.0002`, son 5 epoch mozaik kapalı).
+
+| Model | Orijinal test mAP50 / 50-95 | Temiz test mAP50 / 50-95 | Temiz valid mAP50-95 |
+|---|---|---|---|
+| v2 | 0,900 / 0,730 | 0,896 / 0,726 | **0,732** |
+| v3 | 0,905 / 0,736 | 0,901 / 0,733 | 0,722 |
+
+Hata analizinde (`docs/img/kacirilanlar_v3.jpg`) pedestrian_info (yanlış alarm 10 → 6) ve speed70 (doğru 34 → 37) iyileşti, ama **speed30 yanlış alarmları 8 → 14'e çıktı**. Fark ölçüm gürültüsü içinde ve validasyonda v2 önde. **Karar: uygulamalarda v2 kalıyor.** v3 aday olarak saklanıyor; araç içi video testinde ikisi aynı videoda karşılaştırılacak. Ders: çoğaltma, sorunun asıl kaynağı olan uzak/küçük levhaları çözmüyor.
+
+**Uçtan uca demo testi (Windows uygulaması, v2):** test setinden 6 levhanın görüntüsü sündürülmeden 3'er saniyelik bir videoya kondu. Uyarılar **6/6 doğru sırada** geldi (dur, hız 70, yol ver, hız 30, yaya geçidi, girilmez), her biri levha göründükten 0,13 s sonra, yanlış alarm yok.
+
 ### Hafta 3 — 12–18 Kasım: Mobil uygulama (ilk çalışan sürüm)
 1. YOLOView + eğitilmiş model (`assets/models/`) + DetectionFilter + CooldownManager + AlertQueue + ses dosyaları.
 2. Yatay mod kilidi, ekran hep açık (`wakelock_plus`), sade ayar ekranı (güven eşiği, zoom).

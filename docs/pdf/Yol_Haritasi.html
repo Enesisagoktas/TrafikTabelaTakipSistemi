@@ -230,7 +230,7 @@
   </ul></div>
   <div class="gate"><b>Hafta sonunda:</b> Orijinal test setinde doğruluk puanı (mAP50) <b>≥ 0,80</b> ve telefonda saniyede ≥ 5 kare. (Kıyas için: Roboflow'un kendi modeli aynı test setinde 0,85 alıyor.) Temiz test setindeki puan ayrıca yazılır; sızıntı olmadığı için daha düşük çıkması normal.</div>
   <div class="planb"><b>Olmazsa:</b> Doğruluk düşükse sorunlu levha türlerine bakılır; daha uzun eğitim veya daha büyük görüntü boyutu denenir. Model yavaşsa sıkıştırma ya da daha küçük görüntü boyutu kullanılır.</div>
-  <div class="gate"><b><span class="ok">✓</span> Erken tamamlandı (28 Ekim):</b> Model 47 + 20 tur eğitildi. Orijinal test setinde doğruluk <b>0,900</b> (hedef 0,80; Roboflow'un modeli 0,851), temiz test setinde <b>0,896</b>. Telefon dosyası (.tflite, 5 MB) aynı puanı alıyor (0,897). Zayıf kalan levhalar: yaya geçidi bilgi levhası (0,55), hız 70 (0,70), hız 30 (0,79), yol ver (0,83). Bu levhalara uygulamada daha yüksek güven eşiği konacak; 4. haftada bunlardan kendi fotoğraflarımız eklenecek.</div>
+  <div class="gate"><b><span class="ok">✓</span> Erken tamamlandı (28 Ekim):</b> Model 47 + 20 tur eğitildi. Orijinal test setinde doğruluk <b>0,900</b> (hedef 0,80; Roboflow'un modeli 0,851), temiz test setinde <b>0,896</b>. Telefon dosyası (.tflite, 5 MB) aynı puanı alıyor (0,897). Zayıf kalan levhalar: yaya geçidi bilgi levhası (0,55), hız 70 (0,70), hız 30 (0,79), yol ver (0,83). Bu levhalara uygulamada daha yüksek güven eşiği konacak; 4. haftada bunlardan kendi fotoğraflarımız eklenecek.<br><b>Hata analizi:</b> Kaçırılan hız ve yol ver levhalarının çoğu çok uzaktaki (8–9 piksellik) levhalar; levha yaklaştıkça algılanıyor. Sarı zeminli ve geçici levhalar veri setinde az. <b>Ek deneme (v3):</b> Zayıf levhaların fotoğrafları eğitimde iki kez gösterildi. Toplam puan yarım puan arttı ama "hız 30" yanlış alarmları da arttı; bu yüzden uygulamalarda v2 kaldı. Araç içi video testinde ikisi tekrar karşılaştırılacak.</div>
 </div>
 
 <div class="week">
@@ -266,7 +266,7 @@
 <div class="week">
   <div class="hd">Hafta 6 — Windows uygulaması <span>· 3 – 9 Aralık</span></div>
   <div class="bd">Bu bilgisayar için Windows uygulaması yapılır: web kamerası + aynı modelin PC formatı (.onnx). Filtre, tekrar önleme ve ses kuralları telefon sürümüyle aynıdır. Canlı test bu bilgisayarda web kamerasıyla yapılır. Kalan süre önceki haftalardan kalan işlere ayrılır.</div>
-  <div class="gate"><b><span class="ok">✓</span> İlk sürüm erken hazırlandı (29 Ekim):</b> Windows uygulaması yazıldı ve kısa bir demo videosunda uyarıları sırayla sesli söyledi. Levha listesi ve sesler telefon uygulamasıyla ortak. Bilgisayarın işlemcisinde saniyede ~33 kare işliyor; ekran kartı gerekmiyor. Kalan iş: web kamerasıyla canlı deneme.</div>
+  <div class="gate"><b><span class="ok">✓</span> İlk sürüm erken hazırlandı (29 Ekim):</b> Windows uygulaması yazıldı ve kısa bir demo videosunda uyarıları sırayla sesli söyledi. Levha listesi ve sesler telefon uygulamasıyla ortak. Bilgisayarın işlemcisinde saniyede ~33 kare işliyor; ekran kartı gerekmiyor. 6 farklı levhalı test videosunda uyarıların <b>6'sı da doğru sırayla</b> ve levha göründükten 0,13 saniye sonra geldi; yanlış alarm olmadı. Her uyarı saniyesiyle log dosyasına yazılıyor. Kalan iş: araç içi video ve web kamerasıyla canlı deneme.</div>
 </div>
 
 <!-- ============ SORUNLAR ============ -->
