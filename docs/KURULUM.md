@@ -36,9 +36,19 @@ python scripts\veri_denetimi.py      # rapor: docs\veri_denetimi.md
 
 **Eğitim:**
 ```powershell
-yolo train model=models/yolo11n.pt data=data/levha/data.yaml imgsz=640 epochs=150 patience=30 fliplr=0.0 batch=-1 workers=4 name=v1
+yolo train model=models/yolo11n.pt data=data/levha/data_temiz.yaml imgsz=640 epochs=150 patience=30 fliplr=0.0 batch=-1 workers=4 cache=ram name=v1
 ```
-Çıktılar `ml\runs\detect\<name>\` altına yazılır. `project=` parametresi **verilmemeli**, yoksa klasörler iç içe geçer.
+- `data_temiz.yaml`: erken durdurma ve en iyi modelin seçimi sızıntısız valid ile yapılır (bkz. `docs/veri_denetimi.md`).
+- `cache=ram`: görseller 640'a küçültülüp belleğe alınır (~3,2 GB RAM). Ölçüm (28 Ekim): önbelleksiz ~21 s, önbellekle ~4,5 s (verinin %10'unda bir epoch). Tam veride epoch başına ~50 s, yani 150 epoch en fazla ~2 saat.
+- `batch=-1`: AutoBatch 4 GB VRAM için batch 11 seçiyor.
+- Çıktılar `ml\runs\detect\<name>\` altına yazılır. `project=` parametresi **verilmemeli**, yoksa klasörler iç içe geçer.
+- Eğitim sırasında laptop prizde ve Armoury Crate'te Turbo/Performans modunda olmalı.
+
+**Test sonuçları (eğitimden sonra, iki test setinde):**
+```powershell
+yolo val model=runs/detect/v1/weights/best.pt data=data/levha/data.yaml split=test        # orijinal test (Roboflow ile kıyas)
+yolo val model=runs/detect/v1/weights/best.pt data=data/levha/data_temiz.yaml split=test  # temiz test (gerçek başarı)
+```
 
 **Telefon için `.tflite` dışa aktarma:**
 ```powershell

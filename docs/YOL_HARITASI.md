@@ -97,7 +97,7 @@ Ortam kuruldu ve araçlar doğrulandı (bkz. `docs/KURULUM.md`):
 **B planı:** Model eklentide çalışmazsa eklentinin resmi desteklediği YOLO26n'e geçilir. FPS düşükse sırayla şunlar denenir: GPU → INT8 → imgsz 480 → YOLO26n.
 
 ### Hafta 2 — 5–11 Kasım: Eğitim + dışa aktarma
-1. Eğitim 1: `yolo11n.pt`, `data=data/levha/data_temiz.yaml` (erken durdurma sızıntısız valid ile yapılsın), `imgsz=640`, `epochs=150`, `patience=30`, **`fliplr=0.0`**, `batch=-1`, `workers=4`.
+1. Eğitim 1: `yolo11n.pt`, `data=data/levha/data_temiz.yaml` (erken durdurma sızıntısız valid ile yapılsın), `imgsz=640`, `epochs=150`, `patience=30`, **`fliplr=0.0`**, `batch=-1`, `workers=4`, `cache=ram`. Tahmini süre en fazla ~2 saat (epoch başına ~50 s, ölçüldü).
 2. Değerlendirme: sınıf bazlı mAP ve karışıklık matrisi. Sonuç **iki test setinde** raporlanır: orijinal test (Roboflow'un %85,1'iyle kıyas için) ve temiz test (gerçek başarı).
 3. Dışa aktarma (Windows): `format=saved_model` FP32 ve FP16 üretir; `quantize=8 data=data/levha/data.yaml` eklenince INT8 varyantları da çıkar. Doğruluk Windows'ta `yolo val` ile ölçülür (`.tflite` doğrudan çalıştırılabiliyor); hız telefonda ölçülür. En iyi varyant seçilir.
 4. Sürümler sabit tutulur (`ml/requirements.txt` ✔, `mobile/pubspec.lock`); çalışan bir şey olduğunda paket güncellenmez.
@@ -163,7 +163,7 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 | 16 | Veri sızıntısı | 🔧 | Bulundu ve ayıklandı ✔: valid/test'in ~%45'i train'deki görsellerin neredeyse aynısı (algısal hash ≤ 12, gözle doğrulandı). `data_temiz.yaml` → temiz valid 296, temiz test 308 görsel. Bu setlerde sınıf başına 7–37 kutu kaldığı için sınıf bazlı skorlar gürültülü olabilir. | H1 |
 | 17 | Yetersiz doğrulama | 🔧 | Ayrı ve hiç dokunulmamış test seti; ayrıca kendi yol videolarımızla gerçek dünya testi. | H2, H4 |
 | 18 | Erken durdurma / aşırı öğrenme | 🔧 | `patience=30`, `epochs=150`; loss eğrileri izlenir; `best.pt` val mAP'e göre seçilir. | H2 |
-| 19 | Eğitim donanımı yetersizliği | 🔧 | 4 GB VRAM için `batch=-1` (VRAM'in ~%60'ı otomatik kullanılır), `cache=False`, `workers=4`. Laptop prize takılı ve Armoury Crate'te Turbo modda olmalı. | H2 |
+| 19 | Eğitim donanımı yetersizliği | 🔧 | Ölçüldü ✔: `batch=-1` 4 GB VRAM için batch 11 seçiyor. Darboğaz GPU değil, 1080p JPEG'lerin her epoch'ta yeniden açılması. `cache=ram` (~3,2 GB RAM) bunu ~5 kat hızlandırıyor (tam veride epoch başına ~50 s). Laptop prize takılı ve Armoury Crate'te Turbo modda olmalı. | H2 |
 | 20 | Eğitim ile gerçek kamera arasındaki fark | 🔧📏 | Eğitimdeki imgsz ile çıkarımdaki imgsz aynı tutulur; kendi videolarımızla doğrulanır. Somut kanıt bulundu: risk 63. | H2, H4 |
 
 ### Dışa aktarma ve mobil entegrasyon

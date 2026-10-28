@@ -223,7 +223,7 @@
 <div class="week">
   <div class="hd">Hafta 2 — Modeli eğitme <span>· 5 – 11 Kasım</span></div>
   <div class="bd"><ul>
-    <li>YOLO11n'i Türk levhalarıyla 640 piksel boyutunda eğit (en fazla 150 tur; 30 tur boyunca gelişme olmazsa eğitim kendiliğinden durur). Eğitim sırasındaki kontroller temiz doğrulama setiyle yapılır.</li>
+    <li>YOLO11n'i Türk levhalarıyla 640 piksel boyutunda eğit (en fazla 150 tur; 30 tur boyunca gelişme olmazsa eğitim kendiliğinden durur). Eğitim sırasındaki kontroller temiz doğrulama setiyle yapılır. Eğitim en fazla ~2 saat sürer (ölçüldü).</li>
     <li><b>Önemli:</b> Fotoğrafları aynalama kapalı olacak. Açık kalırsa "Sağdan gidiniz" ile "Soldan gidiniz" levhaları birbirine karışır.</li>
     <li>Her levha türü için başarıyı ayrı ölç ve hangi levhaların birbirine karıştığına bak. Sonucu hem orijinal hem temiz test setinde raporla.</li>
     <li>Modelin 3 telefon sürümünü hazırla: normal, yarı sıkıştırılmış, tam sıkıştırılmış. Her birinin doğruluğunu ve telefondaki hızını tabloya yaz, en iyisini seç.</li>
@@ -306,7 +306,7 @@
     <tr><td class="num">16</td><td>Aynı levhanın neredeyse aynı fotoğrafları hem eğitimde hem testte var; sonuç olduğundan iyi görünür ("veri sızıntısı")</td><td>Bulundu ve ayıklandı <span class="ok">✓</span>: doğrulama ve test fotoğraflarının ~%45'i eğitimdekilerin neredeyse aynısıydı. Temiz doğrulama (296) ve temiz test (308) setleri oluşturuldu.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H1</td></tr>
     <tr><td class="num">17</td><td>Test fotoğrafları az ya da birbirine çok benziyor</td><td>Eğitimde hiç kullanılmayan ayrı bir test bölümü ve ayrıca kendi çektiğimiz yol videoları kullanılır.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2, H4</td></tr>
     <tr><td class="num">18</td><td>Eğitim çok erken bitiyor ya da model ezberliyor</td><td>30 tur boyunca gelişme olmazsa eğitim durur. En iyi sonuç veren model otomatik saklanır ve grafikler izlenir.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2</td></tr>
-    <tr><td class="num">19</td><td>Bilgisayar gücü yetmiyor (4 GB ekran kartı belleği)</td><td>Ayarlar 4 GB belleğe göre otomatik yapılıyor. Eğitim sırasında laptop prize takılı ve "Turbo" modda olmalı.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2</td></tr>
+    <tr><td class="num">19</td><td>Bilgisayar gücü yetmiyor (4 GB ekran kartı belleği)</td><td>Ölçüldü <span class="ok">✓</span>: yavaşlığın sebebi ekran kartı değil, büyük fotoğrafların her turda yeniden açılması. Fotoğraflar bir kez küçültülüp belleğe alınınca (~3 GB) eğitim ~5 kat hızlanıyor. Eğitim sırasında laptop prizde ve "Turbo" modda olmalı.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td><td class="when">H2</td></tr>
     <tr><td class="num">20</td><td>Eğitim fotoğrafları ile telefon kamerası farklı</td><td>Eğitimde ve telefonda aynı görüntü boyutu kullanılır. Kendi videolarımızla kontrol edilir. Bu farkın somut kanıtı bulundu: risk 63.</td><td class="st"><span class="tag t-olc">Ölçülecek</span></td><td class="when">H2, H4</td></tr>
   </tbody>
 </table>
