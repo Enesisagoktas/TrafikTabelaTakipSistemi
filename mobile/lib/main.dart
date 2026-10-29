@@ -12,10 +12,14 @@ import 'model_test.dart';
 const kModelPath = 'assets/models/levha.tflite';
 const kModelName = 'v2 · YOLO11n · 640 px';
 
+/// Uzak levha sınırı: görüntü yüksekliğinin %5'inden kısa kutular sayılmaz. 10 test videosunda (ml/scripts/esik_tarama.py)
+/// v2 ile güven 0,5 → 0,6 ve bu sınır %2,5 → %5 olunca yanlış uyarı 58 → 20, yakalanan levha 25 → 30 oldu (29 Ekim).
+const kMinHeight = 0.05;
+
 /// Ayarlar (bellekte tutulur; uygulama yeniden açılınca varsayılana döner).
 class Settings extends ChangeNotifier {
-  double minConf = 0.5;
-  bool ignoreSmall = true; // görüntü yüksekliğinin %2,5'inden küçük (uzak, ~9 px) kutular: yanlış alarmın ana kaynağı
+  double minConf = 0.6;
+  bool ignoreSmall = true; // uzak (küçük) kutular yanlış alarmın ana kaynağı; bkz. kMinHeight
   bool sound = true;
   bool useGpu = true;
 
@@ -138,7 +142,7 @@ class _DriveScreenState extends State<DriveScreen> {
       _filterKey = key;
       _filter = DetectionFilter(
         minConf: settings.minConf,
-        minHeight: settings.ignoreSmall ? 0.025 : 0,
+        minHeight: settings.ignoreSmall ? kMinHeight : 0,
         classMinConf: classThresholds(settings.minConf),
       );
     }
@@ -277,7 +281,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           SwitchListTile(
             title: const Text('Uzak/küçük levhaları yoksay'),
-            subtitle: const Text('Görüntü yüksekliğinin %2,5\'inden küçük kutular sayılmaz (yanlış alarmın ana kaynağı). Levha yaklaşınca yine algılanır.'),
+            subtitle: const Text('Görüntü yüksekliğinin %5\'inden küçük kutular sayılmaz (yanlış alarmın ana kaynağı). Levha yaklaşınca yine algılanır.'),
             value: settings.ignoreSmall,
             onChanged: (v) => settings.set('küçük levhaları yoksay: ${v ? 'açık' : 'kapalı'}', () => settings.ignoreSmall = v),
           ),
