@@ -17,7 +17,6 @@ import re
 import sys
 import time
 import wave
-import winsound
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -90,8 +89,9 @@ class Rules:
         self.busy_until, self.confirmed = 0.0, set()
 
     def step(self, dets, now):
-        """dets: [(sınıf, güven, normalize yükseklik)] -> (yeni onaylanan sınıflar, çalınacak uyarı ya da None)"""
-        seen = self.filt.update(dets)
+        """dets: [(sınıf, güven, normalize yükseklik)] -> (yeni onaylanan sınıflar, çalınacak uyarı ya da None).
+        Katalogda (alerts.dart) olmayan sınıf yok sayılır: ör. diger_levha, yani tanınan ama uyarısı olmayan levha."""
+        seen = self.filt.update([d for d in dets if d[0] in SIGNS])
         new, self.confirmed = seen - self.confirmed, seen
         for n in self.cool.update(seen, now):
             self.queue.add(n, SIGNS[n][1], now)
@@ -123,6 +123,8 @@ def selftest():
     assert q.next(3.5) is None
     r = Rules()
     assert [r.step([("stop", 0.9, 0.1)], t)[1] for t in (0, 0.1, 0.2)] == [None, None, "stop"]
+    r = Rules()
+    assert [r.step([("diger_levha", 0.99, 0.2)], t) for t in (0, 0.1, 0.2)][-1] == (set(), None)
     assert len(SIGNS) == 20 and all(1 <= p <= 3 for _, p in SIGNS.values())
     print("öz-test geçti")
 
@@ -147,8 +149,12 @@ def main(source, model_path=None, quiet=False):
     from PIL import Image, ImageDraw, ImageFont
     from ultralytics import YOLO
 
-    high_qos()
-    font = ImageFont.truetype("arial.ttf", 44)
+    # --sessiz (yalnızca log) kipi Linux'ta da çalışır, ör. Colab'da video testi: ses, pencere, yazı tipi ve QoS Windows'a özgü
+    if os.name == "nt":
+        high_qos()
+    if not quiet:
+        import winsound
+    font = None if quiet else ImageFont.truetype("arial.ttf", 44)
     # Ekran kartı varsa PyTorch modeli (levha.pt, levha.onnx ile aynı v5b ağırlıkları) GPU'da çalışır. ONNX yalnızca CPU'da:
     # onnxruntime-gpu 1.31 CUDA 13 istiyor, sürücü (566) en fazla 12.7 destekliyor; PyTorch kendi CUDA'sını (12.6) getiriyor.
     gpu = torch.cuda.is_available()
@@ -209,7 +215,8 @@ def main(source, model_path=None, quiet=False):
         if cv2.waitKey(max(wait, 1)) & 0xFF == ord("q"):
             break
     log.close()
-    cv2.destroyAllWindows()
+    if not quiet:
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
