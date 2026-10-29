@@ -12,7 +12,7 @@ import 'event_log.dart';
 import 'model_test.dart';
 
 const kModelPath = 'assets/models/levha.tflite';
-const kModelName = 'v5b · YOLO11n · 640 px';
+const kModelName = 'v6 · YOLO11n · 640 px · 21 sınıf';
 
 /// Uzak levha sınırı: görüntü yüksekliğinin %5'inden kısa kutular sayılmaz. 10 test videosunda (ml/scripts/esik_tarama.py)
 /// v2 ile güven 0,5 → 0,6 ve bu sınır %2,5 → %5 olunca yanlış uyarı 58 → 20, yakalanan levha 25 → 30 oldu (29 Ekim).
@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'Bu uygulama sürücüye yardımcı olmak için geliştirilmiş bir öğrenci projesidir; güvenlik sistemi değildir. '
             'Trafik levhalarına ve kurallara her zaman kendiniz dikkat edin. Sürüş sırasında telefona dokunmayın.\n\n'
             'Veri setleri: Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0; '
-            'DFG Traffic Sign Dataset, Tabernik & Skočaj (2019), ViCoS, CC BY-NC-SA 4.0 (ticari olmayan kullanım).',
+            '"trafik levhaları", trafik isaretleri çalışma alanı, Roboflow Universe, CC BY 4.0.',
           ),
           actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Anladım'))],
         ),
@@ -337,7 +337,7 @@ class SettingsScreen extends StatelessWidget {
           const ListTile(
             title: Text('Veri setleri'),
             subtitle: Text('Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0\n'
-                'DFG Traffic Sign Dataset, Tabernik & Skočaj (2019), ViCoS, CC BY-NC-SA 4.0 (ticari olmayan kullanım)'),
+                '"trafik levhaları", trafik isaretleri çalışma alanı, Roboflow Universe, CC BY 4.0'),
           ),
           const ListTile(
             title: Text('Not'),

@@ -82,6 +82,19 @@ v2 ve v4'te de aynı tablo çıktı (ör. ~5 FPS'te v4: 16 (15) / 6 → 24 (20) 
 ekranının altında da "oylama 2/3" yazıyor. Emülatörde (~2,5 FPS) bu geçiş görüldü. Bilgisayar uygulaması en az ~21 FPS
 (GPU'da ~63) çalıştığı için hep 5 karenin 3'ünü kullanıyor.
 
+## v6 (29 Ekim gecesi): 21. sınıf "diğer levha", yalnız Türk verisi
+
+Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1280 px kopyalar:
+
+| Model | 30 FPS: yakalanan (zamanında) / yanlış uyarı | ~10 FPS |
+|---|---|---|
+| v5b (DFG'li) | 32 (26) / 18 | 27 (23) / 6 |
+| **v6** (DFG yok, + trafik levhaları seti, 21 sınıf) | 32 (26) / **14** | 28 (23) / **9** |
+
+Yakalama aynı; 30 FPS'te yanlış uyarı azaldı, ~10 FPS'te arttı. "Diğer levha" sınıfı yalnızca Bilecik (14) ve Ankara (1)
+videolarında tespit verdi; öteki 8 videoda ve bizim eğitim görsellerinde hiç. Ayrıntı ve karar: `docs/YOL_HARITASI.md`
+(v6 bölümü). Komutlar: `docs/KURULUM.md`.
+
 ## Tek kare test seti (temiz test, 308 fotoğraf, 435 levha)
 | Model | mAP50 | mAP50-95 | Güven 0,7 ile: kesinlik | Yakalama (kutu ≥ %5, 285 levha) | 100 fotoğrafta yanlış alarm |
 |---|---|---|---|---|---|

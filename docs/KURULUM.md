@@ -73,6 +73,15 @@ yolo train model=runs/detect/v4/weights/best.pt data=data/levha640/data_v5.yaml 
 # v5, 3 epoch bittikten sonra bellek yetmediği için çöktü (yanında TFLite dışa aktarma çalışıyordu). v5b, v5'in last.pt'sinden
 # yeni bir eğitim olarak başlatıldı (resume değil; workers 3 -> 2, süre 2,5 -> 2,2 saat):
 yolo train model=runs/detect/v5/weights/last.pt data=data/levha640/data_v5.yaml imgsz=640 batch=16 workers=2 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=100 time=2.2 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v5b
+
+# v6 (29 Ekim gecesi): 21. sınıf diger_levha, yalnız Türk verisi. DFG eğitimden çıkarıldı (ek\dfg -> data\dis\dfg\ek_dfg_v5),
+# Roboflow "trafik levhaları" (trafik-isaretleri-cpsyj/trafik-levhalari-gsqx4, v2, YOLOv11 zip) data\dis\trafik_levhalari altına açıldı:
+python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari scripts\esleme_trafik_levhalari.json --diger   # -> data_v6.yaml (21 sınıf)
+yolo train model=runs/detect/v5b/weights/best.pt data=data/levha640/data_v6.yaml imgsz=640 batch=16 workers=2 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=60 patience=20 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v6
+# 31. epoch'ta durdurulup 4 işçiyle sürdürüldü (epoch 1,7 -> 1,3 dk; RAM sınırda, sayfa dosyası büyüdü):
+yolo train model=runs/detect/v6/weights/last.pt data=data/levha640/data_v6.yaml imgsz=640 batch=16 workers=4 optimizer=AdamW lr0=0.0002 warmup_epochs=0 warmup_bias_lr=0 epochs=29 patience=15 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v6_devam
+# Temiz test (test etiketleri 20 sınıflı; diger_levha satırı boş): yolo val model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v6.yaml split=test
+# Sözde etiket (bizim görsellerde modelin bulduğu diger_levha kutuları): python scripts\sozde_etiket.py runs/detect/v6_devam/weights/best.pt 0.5
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).
