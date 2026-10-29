@@ -30,6 +30,40 @@ const signs = <String, ({String text, int priority})>{
   'pedestrian_info': (text: 'Yaya geçidi', priority: 3),
 };
 
+/// Zayıf sınıfların taban eşikleri (Hafta 2 hata analizi: hız levhaları birbirine,
+/// pedestrian_info başka mavi levhalara karışıyor).
+const _weakFloor = {'speed30': 0.65, 'speed50': 0.65, 'speed70': 0.65, 'pedestrian_info': 0.7};
+
+/// Sınıfa özel eşikler: taban eşik ile genel eşikten büyük olanı.
+Map<String, double> classThresholds(double minConf) =>
+    {for (final e in _weakFloor.entries) e.key: e.value > minConf ? e.value : minConf};
+
+/// Bir önceki çağrıya göre kümeye yeni giren sınıflar (kayıtta "ONAY" satırı için).
+class RisingEdge {
+  Set<String> _prev = {};
+
+  Set<String> update(Set<String> current) {
+    final out = current.difference(_prev);
+    _prev = {...current};
+    return out;
+  }
+}
+
+/// Anahtar başına en fazla [interval]'de bir izin verir (kayıt seli olmasın).
+class Throttle {
+  Throttle(this.interval);
+
+  final Duration interval;
+  final _last = <String, DateTime>{};
+
+  bool allow(String key, DateTime now) {
+    final last = _last[key];
+    if (last != null && now.difference(last) < interval) return false;
+    _last[key] = now;
+    return true;
+  }
+}
+
 /// Güven eşiği + en küçük kutu + "son [window] karenin en az [minHits]'inde görüldü" oylaması.
 class DetectionFilter {
   DetectionFilter({

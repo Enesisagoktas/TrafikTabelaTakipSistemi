@@ -38,6 +38,8 @@ dependencies:
   just_audio: ^0.10.6
   audio_session: ^0.2.4
   wakelock_plus: ^1.8.2
+  share_plus: ^13.3.1
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +67,7 @@ flutter:
   assets:
     - assets/models/
     - assets/sounds/
+    - assets/test_images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

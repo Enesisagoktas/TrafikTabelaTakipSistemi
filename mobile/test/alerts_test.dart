@@ -97,6 +97,35 @@ void main() {
     });
   });
 
+  group('classThresholds', () {
+    test('zayıf sınıflar genel eşikten düşük olamaz, genel eşik yüksekse onu alır', () {
+      expect(classThresholds(0.5)['speed70'], 0.65);
+      expect(classThresholds(0.5)['pedestrian_info'], 0.7);
+      expect(classThresholds(0.8)['speed70'], 0.8);
+      expect(classThresholds(0.5).containsKey('stop'), isFalse);
+    });
+  });
+
+  group('RisingEdge', () {
+    test('yalnızca yeni giren sınıfları döndürür', () {
+      final r = RisingEdge();
+      expect(r.update({'stop'}), {'stop'});
+      expect(r.update({'stop', 'giveway'}), {'giveway'});
+      expect(r.update({'giveway'}), isEmpty);
+      expect(r.update({'stop', 'giveway'}), {'stop'});
+    });
+  });
+
+  group('Throttle', () {
+    test('aynı anahtara aralık dolmadan izin vermez, farklı anahtarlar bağımsız', () {
+      final t = Throttle(const Duration(seconds: 1));
+      expect(t.allow('stop', at(0)), isTrue);
+      expect(t.allow('stop', at(0.5)), isFalse);
+      expect(t.allow('giveway', at(0.5)), isTrue);
+      expect(t.allow('stop', at(1)), isTrue);
+    });
+  });
+
   test("katalogda modelin 20 sınıfının hepsi var ve öncelikler 1-3", () {
     const modelNames = [
       'caution', 'crossroads', 'dangerousleft', 'dangerousright', 'donotturnleft', 'donotturnright', 'giveway',
