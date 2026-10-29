@@ -79,8 +79,8 @@ kaçırılıyor. v5b, güven 0,7, en küçük kutu %5:
 v2 ve v4'te de aynı tablo çıktı (ör. ~5 FPS'te v4: 16 (15) / 6 → 24 (20) / 12).
 **Karar:** telefon son 10 saniyede saniyede 8 kareden az işlediyse oylama kendiliğinden "3 karenin 2'si" oluyor
 (`mobile/lib/alerts.dart` `votingFor`; hız, işlenen kare sayısından ölçülüyor). Kayıtlar'a "AYAR · Oylama 2/3 (ortalama … FPS)" satırı düşüyor, Sürüş
-ekranının altında da "oylama 2/3" yazıyor. Emülatörde (~2,5 FPS) bu geçiş görüldü. Bilgisayar uygulaması ~33 FPS
-çalıştığı için hep 5 karenin 3'ünü kullanıyor.
+ekranının altında da "oylama 2/3" yazıyor. Emülatörde (~2,5 FPS) bu geçiş görüldü. Bilgisayar uygulaması en az ~21 FPS
+(GPU'da ~63) çalıştığı için hep 5 karenin 3'ünü kullanıyor.
 
 ## Tek kare test seti (temiz test, 308 fotoğraf, 435 levha)
 | Model | mAP50 | mAP50-95 | Güven 0,7 ile: kesinlik | Yakalama (kutu ≥ %5, 285 levha) | 100 fotoğrafta yanlış alarm |

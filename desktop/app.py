@@ -1,15 +1,17 @@
-"""Windows uygulaması (ilk sürüm): web kamerası + ONNX model (CPU) + mobil sürümle aynı uyarı kuralları.
+"""Windows uygulaması (ilk sürüm): web kamerası + model (ekran kartı varsa levha.pt GPU'da, yoksa levha.onnx CPU'da)
++ mobil sürümle aynı uyarı kuralları.
 
 Levha kataloğu (cümle + öncelik) mobile/lib/alerts.dart'tan okunur, sesler mobile/assets/sounds/*.wav.
 Çalıştırma (proje kökünde):
     ml\\.venv\\Scripts\\python desktop\\app.py           # web kamerası (0)
-    ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4   # video dosyası (log: yol.levha.log.csv; ad = model dosyasının adı)
+    ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4   # video, kendi hızında oynar (log: yol.levha.log.csv; ad = model dosyasının adı)
     ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4 diger_model.onnx   # başka bir modelle
     ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4 --sessiz           # ses ve pencere yok, yalnızca log
     ml\\.venv\\Scripts\\python desktop\\app.py --test    # kural öz-testi
 Çıkış: q
 """
 
+import ctypes
 import os
 import re
 import sys
@@ -125,29 +127,57 @@ def selftest():
     print("öz-test geçti")
 
 
-def main(source, model_path=MODEL, quiet=False):
+def high_qos():
+    """Windows 11 odakta olmayan pencerenin işlemini kısıyor: pencere arkada ya da küçültülmüşken CPU'da çıkarım 27 ms'den
+    ~230 ms'ye çıktı (29 Ekim ölçümü). İşlem yalnızca kendi kısılmasını kapatır; sistem ayarı değişmez."""
+
+    class State(ctypes.Structure):
+        _fields_ = [("Version", ctypes.c_ulong), ("ControlMask", ctypes.c_ulong), ("StateMask", ctypes.c_ulong)]
+
+    k = ctypes.windll.kernel32
+    k.SetProcessInformation.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_ulong]
+    # ProcessPowerThrottling (4): yürütme hızı (1) denetlenir, kısma durumu kapalı (0). c_void_p(-1): bu işlem
+    return k.SetProcessInformation(ctypes.c_void_p(-1), 4, ctypes.byref(State(1, 1, 0)), ctypes.sizeof(State))
+
+
+def main(source, model_path=None, quiet=False):
     import cv2
     import numpy as np
+    import torch
     from PIL import Image, ImageDraw, ImageFont
     from ultralytics import YOLO
 
+    high_qos()
     font = ImageFont.truetype("arial.ttf", 44)
+    # Ekran kartı varsa PyTorch modeli (levha.pt, levha.onnx ile aynı v5b ağırlıkları) GPU'da çalışır. ONNX yalnızca CPU'da:
+    # onnxruntime-gpu 1.31 CUDA 13 istiyor, sürücü (566) en fazla 12.7 destekliyor; PyTorch kendi CUDA'sını (12.6) getiriyor.
+    gpu = torch.cuda.is_available()
+    model_path = model_path or MODEL.with_suffix(".pt" if gpu else ".onnx")
+    device = 0 if gpu and Path(model_path).suffix == ".pt" else "cpu"
     model = YOLO(str(model_path), task="detect")
+
+    def render(text, width):
+        """Uyarı yazısı uyarı başına bir kez çizilir (her karede çizmek ~23 ms tutuyordu). OpenCV Türkçe karakter
+        çizemiyor: Pillow + Arial. Dönüş: (BGR yama, yazı maskesi)."""
+        im, mask = Image.new("RGB", (width, 64)), Image.new("L", (width, 64))
+        ImageDraw.Draw(im).text((10, 5), text, font=font, fill=(255, 40, 40), stroke_width=3, stroke_fill=(0, 0, 0))
+        ImageDraw.Draw(mask).text((10, 5), text, font=font, fill=255, stroke_width=3, stroke_fill=255)
+        return np.asarray(im)[..., ::-1], np.asarray(mask) > 0
+
     # Telefon uygulamasının varsayılanlarıyla aynı: güven 0,7, küçük kutu eşiği %5 (uzak levhalar yanlış alarmın ana
-    # kaynağı; 10 test videosunda ml/scripts/esik_tarama.py ile seçildi). Oylama hep 5 karenin 3'ü: bilgisayar ~33 FPS
+    # kaynağı; 10 test videosunda ml/scripts/esik_tarama.py ile seçildi). Oylama hep 5 karenin 3'ü: bilgisayar en az ~21 FPS
     # çalışıyor; telefondaki "8 FPS altında 3 karenin 2'si" kuralı (alerts.dart votingFor) burada hiç devreye girmez.
     rules = Rules(class_min_conf=CLASS_MIN_CONF, min_conf=0.7, min_height=0.05)
-    banner, t_prev = "", time.perf_counter()
+    banner, t_prev = None, time.perf_counter()
     # Video dosyasında saat videonun kendi zamanıdır (kurallar gerçek sürüşteki gibi işler) ve her şey loglanır.
     # Boş kareler de yazılır: eşik taraması logu kare kare yeniden oynatır (5 karenin 3'ü kuralı boş kareyi sayar).
     video = isinstance(source, str)
     fps = cv2.VideoCapture(source).get(cv2.CAP_PROP_FPS) if video else 0
     log = open(Path(source).with_suffix(f".{Path(model_path).stem}.log.csv") if video else os.devnull, "w", encoding="utf-8")
     log.write("zaman_sn;olay;sinif;guven;yukseklik\n")
-    # CPU: i7-12700H'de çıkarım ~22 ms, uçtan uca ~33 FPS (29 Ekim). onnxruntime-gpu 1.31 CUDA 13 istiyor,
-    # GPU sürücüsü (566) en fazla CUDA 12.7 destekliyor; gerek de yok.
+    # Pencereyle kare başına (29 Ekim, 1280 px video): CPU/ONNX ~40 ms (25 FPS; çıkarım ~27 ms), GPU ~16 ms (~63 FPS).
     # conf=0.25 ve sınıftan bağımsız NMS: telefondaki eklentinin (ultralytics_yolo) ayarlarıyla aynı.
-    for i, r in enumerate(model.predict(source=source, stream=True, imgsz=640, conf=0.25, agnostic_nms=True, device="cpu", verbose=False)):
+    for i, r in enumerate(model.predict(source=source, stream=True, imgsz=640, conf=0.25, agnostic_nms=True, device=device, verbose=False)):
         now = i / fps if video else time.monotonic()
         dets = [(r.names[int(k)], float(p), float(b[3])) for k, p, b in zip(r.boxes.cls, r.boxes.conf, r.boxes.xywhn)]
         log.writelines(f"{now:.2f};tespit;{n};{p:.3f};{h:.4f}\n" for n, p, h in dets)
@@ -158,21 +188,25 @@ def main(source, model_path=MODEL, quiet=False):
         if n:
             if not quiet:
                 winsound.PlaySound(str(SOUNDS / f"{n}.wav"), winsound.SND_FILENAME | winsound.SND_ASYNC)
-            banner = SIGNS[n][0]
+                banner = render(SIGNS[n][0], r.orig_shape[1])
             log.write(f"{now:.2f};uyari;{n};;\n")
-            print(f"{now:6.1f} sn  uyarı: {banner}", flush=True)
+            print(f"{now:6.1f} sn  uyarı: {SIGNS[n][0]}", flush=True)
         if quiet:
             continue
         frame = r.plot()
         t = time.perf_counter()
         cv2.putText(frame, f"{1 / max(t - t_prev, 1e-6):.0f} FPS", (10, frame.shape[0] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         t_prev = t
-        if banner:  # OpenCV yazı tipi Türkçe karakter çizemiyor; Pillow + Arial
-            im = Image.fromarray(frame[..., ::-1])
-            ImageDraw.Draw(im).text((10, 5), banner, font=font, fill=(255, 40, 40), stroke_width=3, stroke_fill=(0, 0, 0))
-            frame = np.ascontiguousarray(np.asarray(im)[..., ::-1])
+        if banner:
+            patch, mask = banner
+            top = frame[:64]
+            top[mask] = patch[mask]
         cv2.imshow("Trafik Asistani (q: cikis)", frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
+        # Video kendi hızında oynar, uyarı sesi görüntüyle aynı anda duyulur; model geride kalırsa (60 FPS video) beklenmez.
+        if i == 0:
+            t0 = t
+        wait = round((t0 + now - time.perf_counter()) * 1000) if video else 1
+        if cv2.waitKey(max(wait, 1)) & 0xFF == ord("q"):
             break
     log.close()
     cv2.destroyAllWindows()
@@ -184,4 +218,4 @@ if __name__ == "__main__":
     if arg == "--test":
         selftest()
     else:
-        main(int(arg) if arg.isdigit() else arg, *(args[1:2] or [MODEL]), quiet=len(args) < len(sys.argv) - 1)
+        main(int(arg) if arg.isdigit() else arg, *args[1:2], quiet=len(args) < len(sys.argv) - 1)

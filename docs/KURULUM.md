@@ -110,22 +110,23 @@ yolo val model=runs/detect/v5b/weights/best_tflite/best_float16.tflite data=data
 
 **Windows betiklerinde** (`.py`) ana kod `if __name__ == "__main__":` içinde olmalı. Aksi hâlde DataLoader işçileri betiği baştan çalıştırır ve süreç kilitlenir (28 Ekim'de yaşandı).
 
-**Windows uygulaması için ONNX dışa aktarma (Hafta 6):**
+**Windows uygulaması için model dosyaları (Hafta 6):**
 ```powershell
 yolo export model=runs/detect/v5b/weights/best.pt format=onnx imgsz=640
 Copy-Item runs\detect\v5b\weights\best.onnx ..\desktop\levha.onnx
+Copy-Item runs\detect\v5b\weights\best.pt ..\desktop\levha.pt     # ekran kartı varsa bu kullanılır
 ```
 (ONNX çıkışı piksel koordinatlıdır; Windows uygulamasında Ultralytics'in son işlemesi bu şekilde bekler.)
 
 **Windows uygulaması (proje kökünde):**
 ```powershell
 ml\.venv\Scripts\python desktop\app.py            # web kamerası; çıkış: q
-ml\.venv\Scripts\python desktop\app.py yol.mp4    # video dosyası -> yol.levha.log.csv (zaman_sn;olay;sinif;guven;yukseklik)
+ml\.venv\Scripts\python desktop\app.py yol.mp4    # video dosyası, kendi hızında oynar -> yol.levha.log.csv (zaman_sn;olay;sinif;guven;yukseklik)
 ml\.venv\Scripts\python desktop\app.py yol.mp4 ml\runs\detect\v3\weights\best.onnx   # başka modelle -> yol.best.log.csv
 ml\.venv\Scripts\python desktop\app.py --test     # kural öz-testi
 ```
 Video dosyasında saat videonun kendi zamanıdır; kurallar (oylama, tekrar önleme) gerçek sürüşteki gibi işler. Araç içi videolar `ml\data\videolar\` klasörüne konur (git'e girmez).
-CPU'da ~33 FPS. `onnxruntime-gpu` 1.31 CUDA 13 istediği için (sürücü 566 en fazla 12.7 destekliyor) GPU kullanılmıyor; gerek de yok.
+Ekran kartı varsa `desktop\levha.pt` PyTorch'la GPU'da çalışır (RTX 3050'de pencereyle ~63 FPS); yoksa `desktop\levha.onnx` CPU'da (~21–30 FPS). GPU'da ONNX değil PyTorch kullanılıyor: `onnxruntime-gpu` 1.31 CUDA 13 istiyor, sürücü 566 en fazla 12.7 destekliyor. Windows 11 arkadaki ya da küçültülmüş pencerenin işlemini kısıyordu (CPU'da ~3 FPS); uygulama açılışta kendi kısılmasını kapatıyor (`high_qos()`, sistem ayarı değişmez).
 
 **Mobil uygulama (`mobile\` klasöründe):**
 ```powershell

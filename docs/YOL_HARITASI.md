@@ -156,8 +156,13 @@ Hata analizinde (`docs/img/kacirilanlar_v3.jpg`) pedestrian_info (yanlış alarm
 - **v5b sonucu:** temiz testte v2 ile aynı (0,894 / 0,725; validasyon mAP50-95 0,744). Videoda, aynı 1280 px kopyalarda ve aynı kurallarla (0,6 / %5) en iyi model: 30 FPS'te 30 yakalanan (23 zamanında) / 23 yanlış uyarı, ~10 FPS'te 27 (23) / 10. v2: 30 (20) / 28 ve 21 (18) / 13.
 - **Güven 0,6 → 0,7:** üç modelde de yanlış uyarıyı azalttı. v5b + 0,7: 30 FPS'te **32 (26) / 18**, ~10 FPS'te **27 (23) / 6**. Gecenin başındaki uygulamaya göre (v2 + 0,5 / %2,5; aynı kopyalarda 25 (16) / 59 ve 20 (18) / 38) yanlış uyarı üçte birin altına indi, yakalanan levha 7 arttı.
 - **Yavaş telefon:** ~5 FPS'te "5 karenin 3'ü" oylaması levhaların çoğunu kaçırıyor (42 levhadan 16'sı yakalanıyor). Telefon 10 sn'lik ortalamada 8 FPS'in altındaysa oylama kendiliğinden "3 karenin 2'si"ne geçiyor: ~5 FPS'te 24 (21) / 5 (`alerts.dart` `votingFor`, risk 68).
-- **Karar: uygulamalarda v5b, güven 0,7.** FP16 `.tflite` temiz testte 0,892 / 0,727; 11 test fotoğrafında bilgisayarda ve emülatörde 11/11. `desktop/levha.onnx` da v5b. Ölçüm gürültüsü büyük: aynı v2 orijinal videolarda 20, küçültülmüş kopyalarda 28 yanlış uyarı verdi. Sonuç gerçek yol testinde doğrulanacak.
+- **Karar: uygulamalarda v5b, güven 0,7.** FP16 `.tflite` temiz testte 0,892 / 0,727; 11 test fotoğrafında bilgisayarda ve emülatörde 11/11. `desktop/levha.onnx` ve `desktop/levha.pt` de v5b. Ölçüm gürültüsü büyük: aynı v2 orijinal videolarda 20, küçültülmüş kopyalarda 28 yanlış uyarı verdi. Sonuç gerçek yol testinde doğrulanacak.
 - Ders: DFG arka planının etkisi (v4 → v5b) FPS'e göre değişiyor: 30 FPS'te yanlış uyarı neredeyse aynı (19 → 18), zamanında uyarı 23 → 26; ~10 FPS'te yanlış uyarı yarıya indi (12 → 6). v2'ye göre yakalama kazancının çoğu v4'te de var (uzun eğitim). Kalan yanlış uyarıların çoğu uzaktaki sarı yol çalışması levhaları, başka uyarı üçgenleri ve ikaz direkleri; en çok "hız 30" olarak çıkıyor.
+
+**Canlı demo (29 Ekim öğleden sonra).** Ankara videosu masaüstü uygulamasında GPU'da, gerçek hızında ve sesli izlendi. Fark edilenler: taş düşebilir levhasına "kavşak", olmayan sağ viraja "sağa tehlikeli viraj", hız 70'e geç uyarı.
+- v5b logunun tekrarında Ankara'daki 13 yanlış uyarının 12'si 20 sınıfın dışındaki levhalardan geliyor (biri belirsiz): S-viraj, taş düşebilir ve iki yönlü trafik → kavşak; viraj okları → dikkat / tehlikeli viraj; sarı yol çalışması ve kasis üçgeni → hız 30. Eğitimde hata yok; modelin "bu bizim levhamız değil" diyebileceği bir sınıf yok.
+- Gecikme boy sınırından gelmiyor. Uzaktaki levhada güven düşük: hız 70, %2,6 boyda 0,31; 0,7'yi ancak %5,5'te geçti. Aynı anda gelen levhaların sesleri de sırayla çalınıyor: hız 70, "Sağdan gidiniz" bitene kadar 1 sn bekledi. Boy sınırını %3'e indirmek yanlış uyarıyı 30 FPS'te 18 → 36, ~10 FPS'te 6 → 21 yapıyor.
+- **Sonraki adım:** 21. sınıf `diger_levha` (tespit edilir, seslendirilmez). Yeni veri Türk levhalarından olacak; eğitim Colab'da yapılacak. Uygulamada: tanınan bütün levhalar ekranda aynı anda gösterilecek, birden çok levha gelince uyarılar kısalacak.
 
 ### Hafta 3 — 12–18 Kasım: Mobil uygulama (ilk çalışan sürüm)
 1. YOLOView + eğitilmiş model (`assets/models/`) + DetectionFilter + CooldownManager + AlertQueue + ses dosyaları.
@@ -200,12 +205,12 @@ Farklı koşullarda (gündüz/akşam, mümkünse yağmur) testler ve sonuç tabl
 ### Hafta 6 — 3–9 Aralık: Windows uygulaması + tampon
 Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runtime + OpenCV. Kamera okuma Ultralytics'in akış iş parçacığında, ses `winsound` ile eşzamansız çalınır. Filtre, cooldown ve ses kuyruğu kuralları mobil sürümle aynıdır. Ön işleme ve son işlemede Ultralytics'in kendi kodu birebir kullanılır. Canlı test bu bilgisayarda web kamerasıyla yapılır. Kalan süre, önceki haftalardan kalan işler için tampondur.
 
-**Durum (29 Ekim): ilk sürüm erken hazırlandı** (`desktop/app.py`, model `desktop/levha.onnx`)
+**Durum (29 Ekim): ilk sürüm erken hazırlandı** (`desktop/app.py`; model: ekran kartı varsa `desktop/levha.pt`, yoksa `desktop/levha.onnx`)
 - Levha kataloğu `mobile/lib/alerts.dart`'tan okunuyor (tek kaynak); sesler mobil uygulamanınkiyle aynı WAV dosyaları.
 - Kural öz-testi geçiyor (`app.py --test`).
 - 29 Ekim öğlen: model v5b, güven 0,7. Düzeltme: sınıf tabanları (hız levhaları 0,65) artık genel eşiğin altına inmiyor; telefondaki `classThresholds` ile aynı.
 - Demo videosunda "Dur → Hız sınırı otuz → Yol ver" uyarıları sırayla çalındı. İkinci levha aslında hız 50'ydi: demo videosu görüntüyü sündürdüğü için yanlış okundu. Bozulmamış görüntüde `.pt` ve `.onnx` speed50 0,94 veriyor.
-- CPU'da (i7-12700H) çıkarım ~22 ms, uçtan uca ~33 FPS → GPU gerekmiyor. (`onnxruntime-gpu` 1.31 CUDA 13 istiyor; sürücü 566 CUDA 12.7'de kaldığı için zaten çalışmıyor.)
+- 29 Ekim öğleden sonra, pencereyle ölçüm (1280 px video): CPU/ONNX ~21–30 FPS. Pencere arkadayken Windows 11 işlemi kısıyordu (~3 FPS); `high_qos()` ile düzeldi. Varsayılan artık GPU: `levha.pt` PyTorch'la CUDA'da ~63 FPS (`onnxruntime-gpu` CUDA 13 istediği için ONNX GPU'da çalışmıyor). Video kendi hızında oynuyor.
 - Eksik: web kamerasıyla canlı deneme (senin yapman gerekiyor), ayar/eşik arayüzü.
 
 ---
