@@ -231,6 +231,7 @@
   <div class="gate"><b>Hafta sonunda:</b> Orijinal test setinde doğruluk puanı (mAP50) <b>≥ 0,80</b> ve telefonda saniyede ≥ 5 kare. (Kıyas için: Roboflow'un kendi modeli aynı test setinde 0,85 alıyor.) Temiz test setindeki puan ayrıca yazılır; sızıntı olmadığı için daha düşük çıkması normal.</div>
   <div class="planb"><b>Olmazsa:</b> Doğruluk düşükse sorunlu levha türlerine bakılır; daha uzun eğitim veya daha büyük görüntü boyutu denenir. Model yavaşsa sıkıştırma ya da daha küçük görüntü boyutu kullanılır.</div>
   <div class="gate"><b><span class="ok">✓</span> Erken tamamlandı (28 Ekim):</b> Model 47 + 20 tur eğitildi. Orijinal test setinde doğruluk <b>0,900</b> (hedef 0,80; Roboflow'un modeli 0,851), temiz test setinde <b>0,896</b>. Telefon dosyası (.tflite, 5 MB) aynı puanı alıyor (0,897). Zayıf kalan levhalar: yaya geçidi bilgi levhası (0,55), hız 70 (0,70), hız 30 (0,79), yol ver (0,83). Bu levhalara uygulamada daha yüksek güven eşiği konacak; 4. haftada bunlardan kendi fotoğraflarımız eklenecek.<br><b>Hata analizi:</b> Kaçırılan hız ve yol ver levhalarının çoğu çok uzaktaki (8–9 piksellik) levhalar; levha yaklaştıkça algılanıyor. Sarı zeminli ve geçici levhalar veri setinde az. <b>Ek deneme (v3):</b> Zayıf levhaların fotoğrafları eğitimde iki kez gösterildi. Toplam puan yarım puan arttı ama "hız 30" yanlış alarmları da arttı; bu yüzden uygulamalarda v2 kaldı. Araç içi video testinde ikisi tekrar karşılaştırılacak.</div>
+  <div class="gate"><b><span class="ok">✓</span> Gece çalışması (29 Ekim): gerçek sürüş videoları ve yeni model v5b.</b> 10 açık lisanslı araç içi videoda (42 gerçek levha) eski uygulama, telefon hızında (~10 FPS) 20 levha yakalarken <b>38 yanlış uyarı</b> veriyordu. Yanlış uyarıların kaynağı test setinde olmayan şeylerdi: şerit levhaları, başka uyarı üçgenleri, yükseklik sınırı, mavi yön tabelaları. Üç şey değişti: uzak (çok küçük) kutular sayılmıyor, güven eşiği 0,7 oldu ve model Slovenya'nın DFG verisiyle yeniden eğitildi (v5b; bizim levhalara girmeyen her levha "uyarı verme" örneği). Sonuç: aynı videolarda ~10 FPS'te <b>27 levha yakalanıyor, 6 yanlış uyarı</b>. Test setinde v5b eski modelle aynı seviyede. Ayrıntılar: Gece Çalışması Raporu (<code>docs/Gece_Raporu.pdf</code>).</div>
 </div>
 
 <div class="week">
@@ -244,6 +245,7 @@
   </ul></div>
   <div class="gate"><b>Hafta sonunda:</b> Ekrandaki ya da kâğıda basılmış levha fotoğraflarıyla "levhayı gör → sesli söyle" baştan sona çalışıyor, uçak modunda da çalışıyor.</div>
   <div class="gate"><b><span class="ok">✓</span> Kod erken hazırlandı (29 Ekim), telefonda henüz denenmedi:</b> Uyarı mantığı (filtre, tekrar önleme, ses sırası) yazıldı ve 12 otomatik testin hepsi geçiyor. Kamera ekranı, model ve 20 Türkçe uyarı sesi (bilgisayarın Türkçe "Tolga" sesiyle geçici olarak üretildi) uygulamaya bağlandı ve APK derlendi. Uygulamanın <b>internet izni hiç yok</b>, yani internete çıkması işletim sistemi tarafından engelleniyor. Zayıf çıkan hız levhaları ve yaya geçidi bilgi levhası için daha yüksek güven eşiği kondu.</div>
+  <div class="gate"><b><span class="ok">✓</span> Test sürümü hazır (29 Ekim öğlen), emülatörde çalıştı:</b> Dört sekme var: Sürüş, Kayıtlar (Paylaş düğmeli), Model testi (11 gömülü fotoğraf) ve Ayarlar. İlk APK açılışta çöküyordu (kodu küçülten R8 aracı bir kütüphaneyi bozuyordu); düzeltildi. Model v5b, güven eşiği 0,7. Telefon yavaşsa (saniyede 8 karenin altı) oylama kendiliğinden gevşiyor, böylece hızlı geçilen levhalar kaçmıyor. Android 14 emülatöründe model testi <b>11/11 doğru</b>. Telefonda deneme adımları: <code>docs/telefon_testi.md</code>.</div>
 </div>
 
 <div class="week">
@@ -382,8 +384,8 @@
     <tr><td class="num">54</td><td>Ultralytics'in yeni çevirme yöntemi Windows'ta desteklenmiyor</td><td>Eski ve yaygın yöntem (onnx2tf) Windows'ta çalışıyor <span class="ok">✓</span>. Bu yöntemde modelin girdi biçimi farklı (NHWC); eklentinin bunu doğru okuduğu 1. haftada telefonda kontrol edilecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
     <tr><td class="num">55</td><td>Xiaomi telefonlarda USB'den uygulama yüklemek için ek ayar gerekiyor; pil tasarrufu uygulamayı kapatabiliyor</td><td>"USB üzerinden yükle" ayarı açılacak. Uygulama sürekli ön planda kalacak ve ekran hiç kapanmayacak.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
     <tr><td class="num">56</td><td>Kullandığımız kütüphaneler çok sık güncelleniyor; güncelleme bir şeyleri bozabilir</td><td>Sürümler sabitlendi. İş çalışıyorken hiçbir şey güncellenmeyecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
-    <tr><td class="num">57</td><td>Lisanslar</td><td>Veri setinin kaynağı rapor ve uygulamada gösterilecek. Kullandığımız eğitim aracının lisansı gereği kod GitHub'da açık paylaşılacak.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
-    <tr><td class="num">58</td><td>Diskte yer az (~60 GB boş)</td><td>Android telefon simülatörü (emülatör) kurulmadı, gerçek telefon kullanılıyor. Eğitim çıktıları düzenli temizlenecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">57</td><td>Lisanslar</td><td>Veri setinin kaynağı rapor ve uygulamada gösterilecek. Kullandığımız eğitim aracının lisansı gereği kod GitHub'da açık paylaşılacak. Ek veri olan DFG (CC BY-NC-SA 4.0) ticari kullanıma izin vermiyor; öğrenci projesi için uygun, atıf uygulamada var.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
+    <tr><td class="num">58</td><td>Diskte yer az (~60 GB boş)</td><td>Telefon yokken APK'yı denemek için Android 14 emülatörü kuruldu (çalışırken ~3 GB bellek kullanır). Hız ölçümü gerçek telefonda yapılacak. Eğitim çıktıları düzenli temizlenecek.</td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
     <tr><td class="num">59</td><td>Ekran kartı sürücüsü sadece belirli yapay zeka kütüphanesi sürümleriyle uyumlu</td><td>Uyumlu sürüm (CUDA 12.6) seçilerek kuruldu <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
     <tr><td class="num">60</td><td>Kurulumda yaşandı: Android derlemesi durdu (NDK kurulamadı)</td><td>Gerekli parça elle kuruldu <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
     <tr><td class="num">61</td><td>Çevirme paketleri (TensorFlow) eğitimle aynı ortamda; birbirlerinin sürümlerini bozabilirler</td><td>Paketler sabit sürümlerle önceden kuruldu; ekran kartıyla eğitim etkilenmedi <span class="ok">✓</span></td><td class="st"><span class="tag t-biz">Bizim önlemimiz</span></td></tr>
@@ -474,7 +476,8 @@
 
 <div class="footer-note">
   Teknik ayrıntılar: <i>docs/YOL_HARITASI.md</i> · Kurulum kaydı ve komutlar: <i>docs/KURULUM.md</i><br>
-  Veri seti: Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0 — universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye
+  Veri seti: Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0 — universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye<br>
+  Ek veri: DFG Traffic Sign Dataset, Tabernik &amp; Skočaj, IEEE T-ITS 2019, CC BY-NC-SA 4.0 — www.vicos.si/resources/dfg/
 </div>
 
 </body>

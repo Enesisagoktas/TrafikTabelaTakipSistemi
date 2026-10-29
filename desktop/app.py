@@ -1,9 +1,9 @@
-"""Windows uygulaması (ilk sürüm): web kamerası + ONNX model (GPU) + mobil sürümle aynı uyarı kuralları.
+"""Windows uygulaması (ilk sürüm): web kamerası + ONNX model (CPU) + mobil sürümle aynı uyarı kuralları.
 
 Levha kataloğu (cümle + öncelik) mobile/lib/alerts.dart'tan okunur, sesler mobile/assets/sounds/*.wav.
 Çalıştırma (proje kökünde):
     ml\\.venv\\Scripts\\python desktop\\app.py           # web kamerası (0)
-    ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4   # video dosyası (log: yol.log.csv)
+    ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4   # video dosyası (log: yol.levha.log.csv; ad = model dosyasının adı)
     ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4 diger_model.onnx   # başka bir modelle
     ml\\.venv\\Scripts\\python desktop\\app.py yol.mp4 --sessiz           # ses ve pencere yok, yalnızca log
     ml\\.venv\\Scripts\\python desktop\\app.py --test    # kural öz-testi
@@ -38,7 +38,8 @@ class DetectionFilter:
         self.frames = []
 
     def update(self, dets):  # dets: [(sınıf, güven, normalize yükseklik)]
-        self.frames.append({n for n, c, h in dets if c >= self.class_min_conf.get(n, self.min_conf) and h >= self.min_height})
+        # Sınıf eşiği bir taban: genel eşikten düşükse genel eşik geçerli (alerts.dart classThresholds ile aynı).
+        self.frames.append({n for n, c, h in dets if c >= max(self.class_min_conf.get(n, 0), self.min_conf) and h >= self.min_height})
         self.frames = self.frames[-self.window :]
         names = [n for f in self.frames for n in f]
         return {n for n in names if names.count(n) >= self.min_hits}
@@ -102,6 +103,8 @@ class Rules:
 def selftest():
     f = DetectionFilter()
     assert [f.update(x) for x in ([("stop", 0.9, 0.1)], [], [("stop", 0.9, 0.1)], [("stop", 0.9, 0.1)])][-1] == {"stop"}
+    f = DetectionFilter(min_hits=1, min_conf=0.7, class_min_conf=CLASS_MIN_CONF)
+    assert f.update([("speed30", 0.68, 0.1)]) == set()  # taban (0,65) genel eşiği düşürmez
     c = Cooldown()
     assert c.update({"stop"}, 0) == ["stop"] and c.update({"stop"}, 1) == []
     c.update(set(), 2.5)  # yalnızca 1,5 sn görünmedi: yeniden kurulmaz
@@ -130,9 +133,10 @@ def main(source, model_path=MODEL, quiet=False):
 
     font = ImageFont.truetype("arial.ttf", 44)
     model = YOLO(str(model_path), task="detect")
-    # Telefon uygulamasının varsayılanlarıyla aynı: güven 0,6, küçük kutu eşiği %5 (uzak levhalar yanlış alarmın ana
-    # kaynağı; 10 test videosunda ml/scripts/esik_tarama.py ile seçildi).
-    rules = Rules(class_min_conf=CLASS_MIN_CONF, min_conf=0.6, min_height=0.05)
+    # Telefon uygulamasının varsayılanlarıyla aynı: güven 0,7, küçük kutu eşiği %5 (uzak levhalar yanlış alarmın ana
+    # kaynağı; 10 test videosunda ml/scripts/esik_tarama.py ile seçildi). Oylama hep 5 karenin 3'ü: bilgisayar ~33 FPS
+    # çalışıyor; telefondaki "8 FPS altında 3 karenin 2'si" kuralı (alerts.dart votingFor) burada hiç devreye girmez.
+    rules = Rules(class_min_conf=CLASS_MIN_CONF, min_conf=0.7, min_height=0.05)
     banner, t_prev = "", time.perf_counter()
     # Video dosyasında saat videonun kendi zamanıdır (kurallar gerçek sürüşteki gibi işler) ve her şey loglanır.
     # Boş kareler de yazılır: eşik taraması logu kare kare yeniden oynatır (5 karenin 3'ü kuralı boş kareyi sayar).

@@ -13,6 +13,7 @@
 | Flutter / Dart | 3.47.8 / 3.13.7 | `C:\src\flutter` | Önceden vardı, güncellendi |
 | ultralytics_yolo (Flutter eklentisi) | 0.7.1 | `mobile/pubspec.yaml` | |
 | Android SDK | cmdline-tools 23.0, platform-tools 37.0.1, platform 36, build-tools 36.1.0, NDK 28.2.13676358, CMake 3.22.1 | `%LOCALAPPDATA%\Android\Sdk` | `ANDROID_HOME` ve `platform-tools` PATH'e eklendi |
+| Android emülatörü | emulator 37.2.12, sistem görüntüsü `system-images;android-34;google_apis;x86_64`, AVD `levha_test` (Android 14) | `%LOCALAPPDATA%\Android\Sdk\emulator`, `%USERPROFILE%\.android\avd` | Yeni (29 Ekim). Telefon yokken APK denemesi için; çalışırken ~3 GB bellek, eğitim sürerken açma |
 | JDK | Temurin 21.0.11 | `C:\Program Files\Eclipse Adoptium` | Önceden vardı |
 | Git | 2.54 | — | Önceden vardı |
 | VS Code eklentileri | Flutter/Dart, Python | — | Yeni |
@@ -58,6 +59,36 @@ Ayarlar (`workers`, `batch` vb.) kayıttan otomatik alınır.
 yolo train model=runs/detect/v1/weights/best.pt data=data/levha640/data_temiz.yaml imgsz=640 epochs=20 optimizer=AdamW lr0=0.0004 warmup_epochs=1 close_mosaic=10 fliplr=0.0 batch=16 workers=3 name=v2
 ```
 
+**Ek veri (29 Ekim): arka plan kırpıntıları ve DFG.** Amaç yanlış uyarıyı azaltmak: modele "bu levha değil" örnekleri göstermek.
+```powershell
+python scripts\negatif.py          # bizim train görsellerinin levhasız kenarlarından 422 kırpıntı (415'i elle kontrol sonrası kaldı)
+# DFG (Slovenya, CC BY-NC-SA 4.0, https://www.vicos.si/resources/dfg/). dfg_hazirla.py şu düzeni bekler (ml\ altında):
+#   data\dis\dfg\annot\    <- açılmış JSON'lar: train-difficult.json ve test.json (sitedeki annotation zip'lerinden)
+#   data\dis\dfg\parcalar\ <- JPEGImages.tar.bz2'nin baştan 64 MiB'lık parçaları: p000, p001, ... (yalnızca baştan
+#                             kesintisiz, tam boyutlu parçalar okunur; indirme yarım kalsa da inen kısım kullanılır)
+python scripts\dfg_hazirla.py      # gerçek 6.957 görüntü -> data\dis\dfg\stage (YOLO düzeni, 200 sınıf)
+python scripts\ek_veri.py data\dis\dfg\stage dfg scripts\esleme_dfg.json --atla "III-29-30,III-29-40,III-30-30" --arka-plan
+# -> data\levha640\ek\dfg ve data_v5.yaml (bizim train + ek\*; val/test bizim temiz setler)
+yolo train model=runs/detect/v4/weights/best.pt data=data/levha640/data_v5.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=100 time=2.5 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v5
+# v5, 3 epoch bittikten sonra bellek yetmediği için çöktü (yanında TFLite dışa aktarma çalışıyordu). v5b, v5'in last.pt'sinden
+# yeni bir eğitim olarak başlatıldı (resume değil; workers 3 -> 2, süre 2,5 -> 2,2 saat):
+yolo train model=runs/detect/v5/weights/last.pt data=data/levha640/data_v5.yaml imgsz=640 batch=16 workers=2 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=100 time=2.2 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v5b
+```
+- `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
+- ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).
+
+**Video testi ve kural taraması** (araç içi videolar `data\videolar\`, gerçek durum `degerlendirme\video_gercek_durum.json`):
+```powershell
+python scripts\video_kucult.py                     # bir kez: 1280 px MJPG kopyalar -> data\videolar\kucuk\*.avi
+# <model_adı> = .onnx dosyasının uzantısız adı; log dosyasının adına girer. yolo export hep best.onnx üretir, önce adlandır:
+Copy-Item runs\detect\v5b\weights\best.onnx runs\detect\v5b\weights\v5b.onnx
+# her video için (proje kökünde); log videonun yanına (kucuk\) yazılır, betikler data\videolar\ altında arar:
+#   ml\.venv\Scripts\python desktop\app.py ml\data\videolar\kucuk\<video>.avi ml\runs\detect\v5b\weights\v5b.onnx --sessiz
+#   Move-Item ml\data\videolar\kucuk\*.v5b.log.csv ml\data\videolar\ -Force
+python scripts\video_degerlendir.py <model_adı>    # yakalanan / zamanında / kaçan / yanlış uyarı, tek tek
+python scripts\esik_tarama.py <model_adı> 3        # kural ayarlarını ~10 FPS'te tarar (3 = her 3. kare; 4-6 = ~7,5-5 FPS)
+```
+
 **Test sonuçları (eğitimden sonra, iki test setinde):**
 ```powershell
 yolo val model=runs/detect/v1/weights/best.pt data=data/levha640/data.yaml split=test        # orijinal test (Roboflow ile kıyas)
@@ -66,29 +97,30 @@ yolo val model=runs/detect/v1/weights/best.pt data=data/levha640/data_temiz.yaml
 
 **Telefon için `.tflite` dışa aktarma:**
 ```powershell
-python scripts\export_tflite.py runs/detect/v2/weights/best.pt
-# -> runs/detect/v2/weights/best_tflite/best_float32.tflite ve best_float16.tflite
+python scripts\export_tflite.py runs/detect/v5b/weights/best.pt      # uygulamadaki model: v5b (29 Ekim)
+# -> runs/detect/v5b/weights/best_tflite/best_float32.tflite ve best_float16.tflite
 ```
 ⚠️ `yolo export ... format=saved_model` ile çıkan `.tflite` dosyalarını **kullanma**. Ultralytics 8.4.191'de bu yol kutu koordinatlarını piksel (0–640) olarak veriyor, ama `.tflite` okuyucuları (Ultralytics ve Flutter eklentisi) 0–1 arası normalize koordinat bekliyor. Sonuç mAP 0 olur (28 Ekim'de yaşandı). Betik ONNX çıkışına "xywh ÷ 640" ekleyip yeniden çeviriyor ve sınıf isimlerini (`metadata.json`) dosyaya gömüyor. INT8 varyantı betikte henüz yok; gerekirse (Hafta 1 hız ölçümüne göre) eklenecek.
 
 **`.tflite` modelini Windows'ta doğrulama** (`.pt` ile aynı puanı almalı):
 ```powershell
-yolo val model=runs/detect/v2/weights/best_tflite/best_float16.tflite data=data/levha640/data_temiz.yaml split=test
+yolo val model=runs/detect/v5b/weights/best_tflite/best_float16.tflite data=data/levha640/data_temiz.yaml split=test
+# v5b: .pt 0,894 / 0,725, FP16 .tflite 0,892 / 0,727 (mAP50 / mAP50-95)
 ```
 
 **Windows betiklerinde** (`.py`) ana kod `if __name__ == "__main__":` içinde olmalı. Aksi hâlde DataLoader işçileri betiği baştan çalıştırır ve süreç kilitlenir (28 Ekim'de yaşandı).
 
 **Windows uygulaması için ONNX dışa aktarma (Hafta 6):**
 ```powershell
-yolo export model=runs/detect/v2/weights/best.pt format=onnx imgsz=640
-Copy-Item runs\detect\v2\weights\best.onnx ..\desktop\levha.onnx
+yolo export model=runs/detect/v5b/weights/best.pt format=onnx imgsz=640
+Copy-Item runs\detect\v5b\weights\best.onnx ..\desktop\levha.onnx
 ```
 (ONNX çıkışı piksel koordinatlıdır; Windows uygulamasında Ultralytics'in son işlemesi bu şekilde bekler.)
 
 **Windows uygulaması (proje kökünde):**
 ```powershell
 ml\.venv\Scripts\python desktop\app.py            # web kamerası; çıkış: q
-ml\.venv\Scripts\python desktop\app.py yol.mp4    # video dosyası -> yol.levha.log.csv (zaman_sn;olay;sinif;guven)
+ml\.venv\Scripts\python desktop\app.py yol.mp4    # video dosyası -> yol.levha.log.csv (zaman_sn;olay;sinif;guven;yukseklik)
 ml\.venv\Scripts\python desktop\app.py yol.mp4 ml\runs\detect\v3\weights\best.onnx   # başka modelle -> yol.best.log.csv
 ml\.venv\Scripts\python desktop\app.py --test     # kural öz-testi
 ```
@@ -99,11 +131,23 @@ CPU'da ~33 FPS. `onnxruntime-gpu` 1.31 CUDA 13 istediği için (sürücü 566 en
 ```powershell
 cd C:\Projeler\TrafikTabelaTakipSistemi\mobile
 # yeni model eğitildiyse:
-Copy-Item ..\ml\runs\detect\v2\weights\best_tflite\best_float16.tflite assets\models\levha.tflite
+Copy-Item ..\ml\runs\detect\v5b\weights\best_tflite\best_float16.tflite assets\models\levha.tflite
 .\tool\sesleri_uret.ps1           # 20 uyarı sesini Türkçe "Tolga" sesiyle üretir (cümleler lib\alerts.dart'tan)
 flutter test                      # uyarı mantığı testleri
-flutter build apk --release       # build\app\outputs\flutter-apk\app-release.apk
+flutter build apk --release --split-per-abi   # build\app\outputs\flutter-apk\app-arm64-v8a-release.apk (telefon)
+android\gradlew --stop            # derlemeden sonra Gradle sürecini kapat (~3 GB bellek tutuyor)
 ```
+R8 küçültmesi kapalı (`android\app\build.gradle.kts`): açıkken uygulama açılışta çöküyordu (WorkManager veritabanı sınıfı bozuluyordu).
+
+**Emülatörde deneme** (telefon yokken; `levha_test` = Android 14 x86_64):
+```powershell
+$sdk = "$env:LOCALAPPDATA\Android\Sdk"
+& "$sdk\emulator\emulator.exe" -avd levha_test -no-window -no-audio -no-snapshot -memory 1536 -gpu swiftshader_indirect
+& "$sdk\platform-tools\adb.exe" install -r build\app\outputs\flutter-apk\app-x86_64-release.apk
+& "$sdk\platform-tools\adb.exe" shell am start -n com.trafikasistan.trafik_asistan/.MainActivity
+& "$sdk\platform-tools\adb.exe" emu kill
+```
+Emülatör ~3 GB bellek kullanır; eğitim sürerken açma.
 
 **Telefonda çalıştırma:**
 ```powershell

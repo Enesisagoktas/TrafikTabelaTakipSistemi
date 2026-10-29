@@ -17,7 +17,7 @@
 | Veri seti | [Hootbu — Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye) | 5.527 görsel, 20 sınıf, **CC BY 4.0** (atıf zorunlu). Roboflow'un kendi modeli bu veride mAP50 %85,1 alıyor; bu bizim kıyas çizgimiz. Ancak test setindeki sızıntı nedeniyle bu değer büyük ihtimalle şişkin (bkz. `docs/veri_denetimi.md`). |
 | Eğitim | Bu bilgisayar (Windows 11, RTX 3050 Laptop 4 GB) | Yerel GPU, çevrimdışı eğitim. |
 | TFLite dışa aktarma | Windows'ta, eğitimle aynı `ml/.venv` içinde: `format=saved_model` (ONNX → onnx2tf → `.tflite`) | Ultralytics'in yeni `litert` formatı Windows'u desteklemiyor. Eski ve yaygın onnx2tf yolu ise Windows'ta çalışıyor ve sınıf isimlerini dosyaya gömüyor (28 Ekim'de doğrulandı). |
-| Sesler | Önceden kaydedilmiş Türkçe `.mp3` dosyaları + `just_audio` | TTS gecikmesi yok, tamamen çevrimdışı. |
+| Sesler | Önceden kaydedilmiş Türkçe `.wav` dosyaları + `just_audio` | TTS gecikmesi yok, tamamen çevrimdışı. |
 
 **Proje önerisinden sapmalar (raporda gerekçesiyle yazılmalı):**
 - Öneride `camera` + `tflite_flutter` + Isolate yazıyor. Bunların yerine resmi eklenti kullanılıyor. Eklenti çıkarımı yerel bir arka plan thread'inde yapıyor ve Dart tarafına yalnızca küçük bir sonuç listesi geliyor. Önerideki "arayüz donmasın" hedefi bu yolla karşılanıyor.
@@ -37,12 +37,13 @@
         │  onResult(List<YOLOResult>)   ← Dart'a yalnızca kutu + sınıf + güven gelir (görüntü gelmez)
         ▼
  DetectionFilter    güven eşiği + en küçük kutu boyutu + "son 5 karenin en az 3'ünde görüldü" oylaması
+                    (telefon saniyede 8 kareden az işliyorsa "son 3 karenin en az 2'sinde"; alerts.dart votingFor)
         ▼
  CooldownManager    sınıf bazlı: en az 5 sn sessizlik VE levha ≥2 sn görünmez olduktan sonra yeniden kurulur
         ▼
  AlertQueue         3 öncelik seviyesi, en fazla 2 bekleyen, 3 sn'den eski uyarılar atılır, tek oynatıcı
         ▼
- just_audio + audio_session (müziği geçici kısar)  ←  assets/sounds/*.mp3   +   ekranda büyük uyarı şeridi
+ just_audio + audio_session (müziği geçici kısar)  ←  assets/sounds/*.wav   +   ekranda büyük uyarı şeridi
 ```
 
 Dart tarafındaki iş her karede en fazla birkaç kutuluk bir liste olduğu için hafif. Bu yüzden ayrıca bir Isolate gerekmiyor. Ağır iş zaten eklentinin yerel thread'inde yapılıyor.
@@ -50,7 +51,7 @@ Dart tarafındaki iş her karede en fazla birkaç kutuluk bir liste olduğu içi
 **Kod düzeni (`mobile/lib/`):**
 - `alerts.dart`: `signs` kataloğu (20 sınıfın Türkçe cümlesi ve önceliği; tek kaynak), `DetectionFilter`, `Cooldown`, `AlertQueue`. Saf Dart, cihazsız testleri `test/alerts_test.dart`'ta.
 - `main.dart`: yatay mod, ekran açık, ses oturumu (müziği kısma), açılış uyarısı, YOLOView, ses oynatma ve uyarı şeridi.
-- `assets/models/levha.tflite` (v2 FP16 modeli), `assets/sounds/<sınıf>.wav` (`tool/sesleri_uret.ps1` ile Windows'un Türkçe "Tolga" sesinden üretildi; kendi kaydınla aynı adla değiştirilebilir).
+- `assets/models/levha.tflite` (v5b FP16 modeli), `assets/sounds/<sınıf>.wav` (`tool/sesleri_uret.ps1` ile Windows'un Türkçe "Tolga" sesinden üretildi; kendi kaydınla aynı adla değiştirilebilir).
 
 ---
 
@@ -146,10 +147,22 @@ Hata analizinde (`docs/img/kacirilanlar_v3.jpg`) pedestrian_info (yanlış alarm
 
 **Uçtan uca demo testi (Windows uygulaması, v2):** test setinden 6 levhanın görüntüsü sündürülmeden 3'er saniyelik bir videoya kondu. Uyarılar **6/6 doğru sırada** geldi (dur, hız 70, yol ver, hız 30, yaya geçidi, girilmez), her biri levha göründükten 0,13 s sonra, yanlış alarm yok.
 
+**Gece çalışması (29 Ekim): gerçek sürüş videoları, yeni kurallar, DFG verisi.** Ayrıntılar `docs/video_testi.md`'de.
+- **10 açık lisanslı araç içi videoda** (42 gerçek levha olayı) v2, eski kurallarla 25 levha yakaladı ama **58 yanlış uyarı** verdi. Halüsinasyonun kaynağı test setinde olmayan şeyler: şerit levhaları, başka uyarı üçgenleri, 4.80 m yükseklik sınırı, mavi yön tabelaları.
+- **Kural düzeltmesi:** güven 0,5 → 0,6 ve en küçük kutu %2,5 → %5 olunca v2'de yanlış uyarı 58 → 20, yakalanan 25 → 30 oldu (orijinal videolar, 30 FPS). Telefon ve masaüstü uygulamasında varsayılan yapıldı.
+- **v4:** aynı veriyle COCO'dan 200 epoch'luk temiz eğitim (160'ta erken durdu). Temiz testte 0,895 / 0,728, yani v2 ile aynı. Videoda da v2'den belirgin iyi değil. Ders: aynı veriyle daha uzun eğitim halüsinasyonu çözmüyor.
+- **DFG verisi** (Slovenya, Tabernik & Skočaj 2019, **CC BY-NC-SA 4.0**: ticari olmayan kullanım, atıf zorunlu): 6.957 gerçek araç kamerası görüntüsü, 200 sınıfın hepsi etiketli. Sınıf eşlemesi kırpıntılarla gözle doğrulandı (`ml/scripts/esleme_dfg.json`): bizim 20 sınıfımızdan 19'una giren 3.411 levha (U dönüşü yasak levhası eşlemede yok) etiket olarak, geri kalan her levha "uyarı verme" örneği (arka plan) olarak kullanıldı. Hız 40/60 levhaları, hız sonu levhaları, yükseklik ve ağırlık sınırı da bu sayede arka plan. "CONA 30" bölge levhalı görüntüler alınmadı. Betikler: `ml/scripts/dfg_hazirla.py` + `ek_veri.py --arka-plan`.
+- **v5:** v4'ten başlayıp bizim veri + 415 arka plan kırpıntısı + 6.733 DFG görüntüsüyle (toplam 11.570) eğitildi. İlk deneme bellek yetmediği için 3 epoch'tan sonra (4. epoch'ta) çöktü (risk 66). Kaldığı yerden **v5b** olarak devam etti.
+- **v5b sonucu:** temiz testte v2 ile aynı (0,894 / 0,725; validasyon mAP50-95 0,744). Videoda, aynı 1280 px kopyalarda ve aynı kurallarla (0,6 / %5) en iyi model: 30 FPS'te 30 yakalanan (23 zamanında) / 23 yanlış uyarı, ~10 FPS'te 27 (23) / 10. v2: 30 (20) / 28 ve 21 (18) / 13.
+- **Güven 0,6 → 0,7:** üç modelde de yanlış uyarıyı azalttı. v5b + 0,7: 30 FPS'te **32 (26) / 18**, ~10 FPS'te **27 (23) / 6**. Gecenin başındaki uygulamaya göre (v2 + 0,5 / %2,5; aynı kopyalarda 25 (16) / 59 ve 20 (18) / 38) yanlış uyarı üçte birin altına indi, yakalanan levha 7 arttı.
+- **Yavaş telefon:** ~5 FPS'te "5 karenin 3'ü" oylaması levhaların çoğunu kaçırıyor (42 levhadan 16'sı yakalanıyor). Telefon 10 sn'lik ortalamada 8 FPS'in altındaysa oylama kendiliğinden "3 karenin 2'si"ne geçiyor: ~5 FPS'te 24 (21) / 5 (`alerts.dart` `votingFor`, risk 68).
+- **Karar: uygulamalarda v5b, güven 0,7.** FP16 `.tflite` temiz testte 0,892 / 0,727; 11 test fotoğrafında bilgisayarda ve emülatörde 11/11. `desktop/levha.onnx` da v5b. Ölçüm gürültüsü büyük: aynı v2 orijinal videolarda 20, küçültülmüş kopyalarda 28 yanlış uyarı verdi. Sonuç gerçek yol testinde doğrulanacak.
+- Ders: DFG arka planının etkisi (v4 → v5b) FPS'e göre değişiyor: 30 FPS'te yanlış uyarı neredeyse aynı (19 → 18), zamanında uyarı 23 → 26; ~10 FPS'te yanlış uyarı yarıya indi (12 → 6). v2'ye göre yakalama kazancının çoğu v4'te de var (uzun eğitim). Kalan yanlış uyarıların çoğu uzaktaki sarı yol çalışması levhaları, başka uyarı üçgenleri ve ikaz direkleri; en çok "hız 30" olarak çıkıyor.
+
 ### Hafta 3 — 12–18 Kasım: Mobil uygulama (ilk çalışan sürüm)
 1. YOLOView + eğitilmiş model (`assets/models/`) + DetectionFilter + CooldownManager + AlertQueue + ses dosyaları.
 2. Yatay mod kilidi, ekran hep açık (`wakelock_plus`), sade ayar ekranı (güven eşiği, zoom).
-3. Açılışta "Deneysel prototip — güvenlik sistemi değildir" uyarısı. Hakkında ekranında veri seti atfı (CC BY 4.0).
+3. Açılışta "Deneysel prototip — güvenlik sistemi değildir" uyarısı. Açılışta ve Ayarlar'da veri seti atıfları (Hootbu CC BY 4.0, DFG CC BY-NC-SA 4.0).
 4. Cooldown, filtre ve kuyruk için birim testleri (`flutter test`).
 5. **Uçak modunda** release APK ile tam çalışma testi.
 
@@ -161,6 +174,17 @@ Hata analizinde (`docs/img/kacirilanlar_v3.jpg`) pedestrian_info (yanlış alarm
 - Hız levhaları için 0,65, pedestrian_info için 0,70 güven eşiği (Hafta 2'de zayıf çıkan sınıflar).
 - Release APK'da **INTERNET izni yok** (aapt2 ile doğrulandı) ✔.
 - Eksik: telefonda deneme (Hafta 1'in kalanıyla birlikte), ayar ekranı (eşik/zoom), sesleri önyükleme. Bunlar telefonda ölçüm yapıldıktan sonra eklenecek.
+
+**Durum (29 Ekim sabah): test arayüzü hazır, emülatörde çalıştı ✔**
+- Dört sekme: **Sürüş** (kamera, uyarı yazısı, FPS), **Kayıtlar** (her olay saatiyle; Paylaş düğmesi oturum dosyasını gönderir), **Model testi** (gömülü 11 fotoğraf; telefonda modelin doğru çalıştığını tek dokunuşla gösterir), **Ayarlar** (güven eşiği, uzak levhaları yoksay, ses, GPU).
+- **Önemli hata bulundu ve düzeltildi:** ilk release APK açılışta çöküyordu. R8 küçültmesi WorkManager'ın veritabanı sınıfını bozuyordu (risk 67). Küçültme kapatıldı. Android 14 emülatöründe uygulama açıldı ve model testi **11/11 doğru** verdi (güvenler bilgisayardakiyle aynı).
+- Telefonda deneme adımları: `docs/telefon_testi.md`.
+
+**Durum (29 Ekim öğlen): v5b'li APK hazır, emülatörde çalıştı ✔**
+- Model v5b (FP16 `.tflite`, 5,1 MB). Güven eşiği varsayılanı 0,7.
+- FPS'e göre oylama: telefon 8 FPS'in altındaysa 3 karenin 2'si. Geçiş Kayıtlar'a "AYAR" satırı olarak yazılıyor ve Sürüş ekranının altında görünüyor. Emülatör ~2,5 FPS'te çalıştı ve 2/3'e geçti.
+- 16 birim testi geçiyor, `flutter analyze` temiz. Telefon için `app-arm64-v8a-release.apk` (42,8 MB).
+- Android 14 emülatöründe model testi 11/11; güvenler bilgisayardaki `.tflite` ile aynı.
 
 ### Hafta 4 — 19–25 Kasım: Saha testi 1 + iyileştirme
 1. **Güvenlik kuralı:** Sürücü telefona hiç dokunmaz. Telefonu yolcu ayarlar; telefon vantuzlu tutucuda durur.
@@ -179,6 +203,7 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 **Durum (29 Ekim): ilk sürüm erken hazırlandı** (`desktop/app.py`, model `desktop/levha.onnx`)
 - Levha kataloğu `mobile/lib/alerts.dart`'tan okunuyor (tek kaynak); sesler mobil uygulamanınkiyle aynı WAV dosyaları.
 - Kural öz-testi geçiyor (`app.py --test`).
+- 29 Ekim öğlen: model v5b, güven 0,7. Düzeltme: sınıf tabanları (hız levhaları 0,65) artık genel eşiğin altına inmiyor; telefondaki `classThresholds` ile aynı.
 - Demo videosunda "Dur → Hız sınırı otuz → Yol ver" uyarıları sırayla çalındı. İkinci levha aslında hız 50'ydi: demo videosu görüntüyü sündürdüğü için yanlış okundu. Bozulmamış görüntüde `.pt` ve `.onnx` speed50 0,94 veriyor.
 - CPU'da (i7-12700H) çıkarım ~22 ms, uçtan uca ~33 FPS → GPU gerekmiyor. (`onnxruntime-gpu` 1.31 CUDA 13 istiyor; sürücü 566 CUDA 12.7'de kaldığı için zaten çalışmıyor.)
 - Eksik: web kamerasıyla canlı deneme (senin yapman gerekiyor), ayar/eşik arayüzü.
@@ -276,8 +301,8 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 | 54 | Ultralytics'in yeni `litert` dışa aktarması Windows'ta desteklenmiyor. | 🔧 | `format=saved_model` (onnx2tf) yolu Windows'ta `.tflite` üretiyor ✔. Bu yolda modelin girişi NHWC biçiminde (yeni `litert` formatında NCHW). Eklentinin bunu doğru okuduğu H1'de telefonda doğrulanacak. |
 | 55 | Xiaomi/MIUI: USB'den uygulama yüklemek için ek ayar gerekiyor, MIUI pil tasarrufu uygulamayı kapatabiliyor. | 🔧 | Geliştirici seçeneklerinde "USB hata ayıklama" ve "USB üzerinden yükle" açılır (Mi hesabı/SIM isteyebilir). Uygulama hep ön planda ve ekran açık çalışır. |
 | 56 | Sürüm kayması: Ultralytics ve eklenti çok sık güncelleniyor (ör. 8.4.83 sürümünde `tflite` formatı kaldırıldı). | 🔧 | H1 başarılı olunca sürümler sabitlenir. |
-| 57 | Lisanslar | 🔧 | Veri seti CC BY 4.0: raporda ve uygulamada atıf zorunlu. Ultralytics ve eklenti AGPL-3.0: uygulama dağıtılırsa kaynak kodu açık olmalı (GitHub'da public repo yeterli). |
-| 58 | Disk alanı (C: sürücüsünde ~60 GB boş) | 🔧 | Android emülatörü kurulmadı (gerçek telefon kullanılıyor); `ml/runs/` klasörü düzenli temizlenir. |
+| 57 | Lisanslar | 🔧 | Veri seti CC BY 4.0: raporda ve uygulamada atıf zorunlu. DFG (v5b'nin ek verisi) CC BY-NC-SA 4.0: atıf zorunlu, ticari kullanım yok; model paylaşılırsa aynı lisansla paylaşmak en güvenlisi. Öğrenci projesi için uygun. Ultralytics ve eklenti AGPL-3.0: uygulama dağıtılırsa kaynak kodu açık olmalı (GitHub'da public repo yeterli). |
+| 58 | Disk alanı (C: sürücüsünde ~60 GB boş) | 🔧 | Telefon yokken deneme için Android 14 emülatörü kuruldu (AVD `levha_test`, x86_64; çalışırken ~3 GB bellek). FPS ölçümü gerçek telefonda yapılacak. `ml/runs/` klasörü düzenli temizlenir. |
 | 59 | GPU sürücüsü CUDA 12.7'yi destekliyor | 🔧 | PyTorch, sürücüyle uyumlu olan CUDA 12.6 derlemesiyle kuruldu ✔. |
 | 60 | *(Kurulumda yaşandı)* Yeni Android cmdline-tools (23.0) paket adlarında `ndk/28.2…` yazımını bekliyor, Flutter 3.47 ise `ndk;28.2…` gönderiyor. Bu yüzden NDK otomatik kurulamadı ve derleme durdu. | 🔧 | NDK elle `ndk/28.2.13676358` yazımıyla kuruldu ✔. İleride Flutter yeni bir NDK sürümü isterse aynı yöntemle kurulur (bkz. `docs/KURULUM.md`). |
 | 61 | Dışa aktarma paketleri (TensorFlow, onnx2tf) eğitimle aynı ortamda. TensorFlow kurulumu `protobuf` ve `onnx` sürümlerini düşürdü. Ayrıca Ultralytics eksik paketi dışa aktarma *sırasında* kurmaya kalkarsa süreç çökebilir. | 🔧 | Paketler önceden ve sabit sürümle kuruldu (`ml/requirements.txt`) ✔. torch ve GPU eğitimi etkilenmedi ✔. Paketler `pip install -U` ile güncellenmeyecek. |
@@ -285,6 +310,9 @@ Bu bilgisayar için Windows uygulaması: web kamerası + `best.onnx` + ONNX Runt
 | 63 | **Veri setinin büyük kısmı Google Street View ekran görüntüsü** (kenarlarda tarayıcı, görev çubuğu ve mini harita var). Bu görüntüler net ve bulanıklıksız; telefon kamerasının ön camdan çektiği görüntüye benzemiyor. Model tarayıcı arayüzü gibi alakasız ipuçlarını da öğrenebilir. | 🔧📏 | Eğitimde bulanıklık, renk ve parlaklık artırımları kullanılır. H4'te kendi telefon görüntülerimizden zor örnekler etiketlenip eğitime eklenir. Temiz testin yanında kendi videolarımızla ayrıca ölçüm yapılır. |
 | 64 | *(Yaşandı)* `format=saved_model` ile çıkan `.tflite`, kutu koordinatlarını piksel olarak veriyor; okuyucular ise normalize koordinat bekliyor. Sonuç: mAP 0. | 🔧 | `scripts/export_tflite.py` ONNX çıkışına "xywh ÷ 640" ekleyip yeniden çeviriyor ✔. Temiz testte `.tflite` 0,897, `.pt` 0,896. Eklentinin normalize koordinatla doğru çizdiği Hafta 1'de telefonda doğrulanacak. |
 | 65 | *(Yaşandı)* `resume` ile `time=` birlikte kullanılınca Ultralytics bitmiş epoch'ları saymıyor ve eğitimi hemen bitiriyor; öğrenme hızını düşürme aşaması atlanıyor. | 🔧 | Devam ederken `time` verilmiyor. Bitirme aşaması sabit epoch'lu ince ayar eğitimiyle (v2) yapıldı ✔: mAP50-95 0,716 → 0,732. |
+| 66 | *(Yaşandı)* Windows'ta asıl sınır RAM değil **sanal bellek (commit)**: RAM + otomatik disk belleği dosyası, 24–40 GB arasında oynuyor. Eğitim (3 + 6 veri yükleyici işçisi) tek başına ~18–20 GB kullanıyor. Yanına torch/TensorFlow açan bir iş (TFLite dışa aktarma) başlatılınca v5 çöktü. | 🔧 | Eğitim sürerken başka ağır Python işi çalıştırılmıyor. `workers=2` ile ~3 GB tasarruf. Flutter derlemesinden kalan Gradle süreci (~3 GB) derlemeden sonra kapatılıyor. Disk belleği ayarına (sistem ayarı) dokunulmadı. |
+| 67 | *(Yaşandı)* Release APK açılışta çöküyordu: R8 küçültmesi WorkManager'ın Room veritabanı sınıfını bozuyor ("Failed to create an instance of class androidx.work.impl.WorkDatabase"). | 🔧 | `mobile/android/app/build.gradle.kts`: `isMinifyEnabled = false`, `isShrinkResources = false`. Android 14 emülatöründe açıldı, model testi 11/11 ✔. APK biraz büyüdü; mağazaya çıkılırsa R8 için koruma kuralı yazılabilir. |
+| 68 | Telefon yavaş çalışırsa (~5–6 FPS) "5 karenin 3'ü" oylaması 1 saniyeye yayılıyor; yol kenarındaki levha o kadar uzun büyük görünmediği için kaçırılıyor (10 videoda 42 levhadan 16'sı yakalandı). | 🔧📏 | 8 FPS altında oylama kendiliğinden "3 karenin 2'si" (`alerts.dart` `votingFor`): ~5 FPS'te 24 yakalanan / 5 yanlış uyarı. Telefonun gerçek FPS'i Hafta 1'de ölçülecek. |
 
 ---
 

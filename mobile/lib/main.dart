@@ -10,7 +10,7 @@ import 'event_log.dart';
 import 'model_test.dart';
 
 const kModelPath = 'assets/models/levha.tflite';
-const kModelName = 'v2 · YOLO11n · 640 px';
+const kModelName = 'v5b · YOLO11n · 640 px';
 
 /// Uzak levha sınırı: görüntü yüksekliğinin %5'inden kısa kutular sayılmaz. 10 test videosunda (ml/scripts/esik_tarama.py)
 /// v2 ile güven 0,5 → 0,6 ve bu sınır %2,5 → %5 olunca yanlış uyarı 58 → 20, yakalanan levha 25 → 30 oldu (29 Ekim).
@@ -18,7 +18,7 @@ const kMinHeight = 0.05;
 
 /// Ayarlar (bellekte tutulur; uygulama yeniden açılınca varsayılana döner).
 class Settings extends ChangeNotifier {
-  double minConf = 0.6;
+  double minConf = 0.7; // 10 test videosunda 0,6'ya göre daha az yanlış uyarı, aynı ya da daha çok yakalama (v5b)
   bool ignoreSmall = true; // uzak (küçük) kutular yanlış alarmın ana kaynağı; bkz. kMinHeight
   bool sound = true;
   bool useGpu = true;
@@ -78,7 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
           content: const Text(
             'Bu uygulama sürücüye yardımcı olmak için geliştirilmiş bir öğrenci projesidir; güvenlik sistemi değildir. '
             'Trafik levhalarına ve kurallara her zaman kendiniz dikkat edin. Sürüş sırasında telefona dokunmayın.\n\n'
-            'Veri seti: Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0.',
+            'Veri setleri: Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0; '
+            'DFG Traffic Sign Dataset, Tabernik & Skočaj (2019), ViCoS, CC BY-NC-SA 4.0 (ticari olmayan kullanım).',
           ),
           actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Anladım'))],
         ),
@@ -133,14 +134,18 @@ class _DriveScreenState extends State<DriveScreen> {
   String _banner = '';
   String _perf = 'Model yükleniyor…';
   int _frames = 0;
-  double _fpsSum = 0, _msSum = 0;
-  DateTime _perfSince = DateTime.now();
+  double _msSum = 0;
+  DateTime _perfSince = DateTime.now(); // her 10 sn'lik pencere o pencerenin ilk karesinde başlar
+
+  var _voting = votingFor(30); // ilk 10 sn'lik FPS ortalamasına kadar 5 karenin 3'ü
 
   DetectionFilter get _activeFilter {
-    final key = '${settings.minConf}/${settings.ignoreSmall}';
+    final key = '${settings.minConf}/${settings.ignoreSmall}/$_voting';
     if (key != _filterKey) {
       _filterKey = key;
       _filter = DetectionFilter(
+        window: _voting.window,
+        minHits: _voting.minHits,
         minConf: settings.minConf,
         minHeight: settings.ignoreSmall ? kMinHeight : 0,
         classMinConf: classThresholds(settings.minConf),
@@ -174,16 +179,23 @@ class _DriveScreenState extends State<DriveScreen> {
   }
 
   void _onPerf(YOLOPerformanceMetrics m) {
-    _frames++;
-    _fpsSum += m.fps;
-    _msSum += m.processingTimeMs;
     final now = DateTime.now();
-    if (now.difference(_perfSince) >= const Duration(seconds: 10)) {
+    if (_frames == 0) _perfSince = now; // model yükleme ve kamera açılışı pencereye girmesin
+    _frames++;
+    _msSum += m.processingTimeMs;
+    final ms = now.difference(_perfSince).inMilliseconds;
+    if (ms >= 10000) {
+      // Eklenti her işlenen karede bu çağrıyı yapıyor; hız gerçek kare sayısından. m.fps 0'dan başlayan bir
+      // ortalama olduğu için ilk saniyelerde gerçek hızdan sapıyor.
+      final fps = (_frames - 1) * 1000 / ms;
       EventLog.instance.add('PERF',
-          '${(_fpsSum / _frames).toStringAsFixed(1)} FPS · ${(_msSum / _frames).toStringAsFixed(0)} ms · ${settings.useGpu ? 'GPU istendi' : 'CPU'}');
+          '${fps.toStringAsFixed(1)} FPS · ${(_msSum / _frames).toStringAsFixed(0)} ms · ${settings.useGpu ? 'GPU istendi' : 'CPU'}');
+      if (votingFor(fps) != _voting) {
+        _voting = votingFor(fps);
+        EventLog.instance.add('AYAR', 'Oylama ${_voting.minHits}/${_voting.window} (ortalama ${fps.toStringAsFixed(1)} FPS)');
+      }
       _frames = 0;
-      _fpsSum = _msSum = 0;
-      _perfSince = now;
+      _msSum = 0;
     }
     if (mounted) setState(() => _perf = '${m.fps.toStringAsFixed(1)} FPS · ${m.processingTimeMs.toStringAsFixed(0)} ms');
   }
@@ -242,7 +254,8 @@ class _DriveScreenState extends State<DriveScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-              child: Text('$_perf · ${settings.useGpu ? 'GPU' : 'CPU'}', style: const TextStyle(color: Colors.white)),
+              child: Text('$_perf · ${settings.useGpu ? 'GPU' : 'CPU'} · oylama ${_voting.minHits}/${_voting.window}',
+                  style: const TextStyle(color: Colors.white)),
             ),
           ),
           Positioned(
@@ -299,8 +312,9 @@ class SettingsScreen extends StatelessWidget {
           const Divider(),
           const ListTile(title: Text('Model'), subtitle: Text(kModelName)),
           const ListTile(
-            title: Text('Veri seti'),
-            subtitle: Text('Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0'),
+            title: Text('Veri setleri'),
+            subtitle: Text('Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0\n'
+                'DFG Traffic Sign Dataset, Tabernik & Skočaj (2019), ViCoS, CC BY-NC-SA 4.0 (ticari olmayan kullanım)'),
           ),
           const ListTile(
             title: Text('Not'),

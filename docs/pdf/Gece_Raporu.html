@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Gece Çalışması Raporu — 29 Ekim 2026</title>
+<style>
+  @page {
+    size: A4; margin: 15mm 14mm 16mm 14mm;
+    @bottom-left { content: "Trafik Levhası Sürücü Asistanı — Gece Çalışması Raporu"; font: 8pt "Segoe UI", Arial; color: #94a3b8; }
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "Segoe UI", Arial; color: #94a3b8; }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.3pt; line-height: 1.45; color: #1f2937; margin: 0; }
+  h1 { font-size: 21pt; margin: 0 0 4px; color: #12304f; }
+  h2 { font-size: 14pt; color: #12304f; border-left: 5px solid #2563eb; padding: 2px 0 2px 10px; margin: 20px 0 9px; break-after: avoid; }
+  h3 { font-size: 11.3pt; color: #12304f; margin: 12px 0 5px; break-after: avoid; }
+  p { margin: 5px 0; }
+  ul, ol { margin: 4px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  .subtitle { font-size: 12pt; color: #475569; margin-bottom: 12px; }
+  .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 14px; margin: 10px 0; background: #f8fafc; break-inside: avoid; }
+  .box.blue { background: #eff6ff; border-color: #93c5fd; }
+  .box.green { background: #f0fdf4; border-color: #86efac; }
+  .box.amber { background: #fffbeb; border-color: #fcd34d; }
+  .keep { break-inside: avoid; }
+  .box h3 { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.4pt; }
+  th { background: #12304f; color: #fff; text-align: left; padding: 5px 7px; font-weight: 600; }
+  td { padding: 5px 7px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  tr { break-inside: avoid; }
+  tbody tr:nth-child(even) td { background: #f8fafc; }
+  tr.best td { background: #dcfce7 !important; font-weight: 600; }
+  tr.old td { color: #64748b; }
+  .ok { color: #15803d; font-weight: 700; }
+  .small { font-size: 8.8pt; color: #64748b; }
+  code { font-family: Consolas, monospace; font-size: 9pt; background: #f1f5f9; padding: 0 3px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>Gece Çalışması Raporu</h1>
+<div class="subtitle">29 Ekim 2026, gece ve sabah · Model doğruluğu, yanlış uyarılar ve test edilebilir APK</div>
+
+<div class="box green">
+  <h3>Kısaca</h3>
+  <ul>
+    <li><span class="ok">✓</span> <b>APK hazır:</b> <code>app-arm64-v8a-release.apk</code> (42,8 MB). Android 14 emülatöründe açıldı, model testi <b>11/11 doğru</b>.</li>
+    <li><span class="ok">✓</span> <b>Ciddi bir hata bulundu ve düzeltildi:</b> önceki APK telefonda <b>açılır açılmaz çökecekti</b>. Sebep, derlemede kodu küçülten R8 aracının WorkManager kütüphanesini bozmasıydı.</li>
+    <li><span class="ok">✓</span> <b>Gerçek sürüş videolarında test kuruldu:</b> 10 açık lisanslı video, 42 gerçek levha. Eski uygulama telefon hızında (~10 FPS) <b>20 levha yakalıyor, 38 yanlış uyarı</b> veriyordu.</li>
+    <li><span class="ok">✓</span> <b>Yeni model v5b ve yeni kurallar:</b> aynı videolarda ~10 FPS'te <b>27 levha yakalıyor, yalnızca 6 yanlış uyarı</b> veriyor. Videonun her karesi işlenince (çoğu 30 FPS) 25 → 32 yakalanan, 59 → 18 yanlış uyarı.</li>
+    <li><span class="ok">✓</span> <b>Yavaş telefon koruması:</b> telefon 8 FPS'in altında çalışırsa uygulama oylamayı kendiliğinden gevşetiyor. ~5 FPS'te yakalanan levha 16'dan 24'e çıkıyor.</li>
+  </ul>
+</div>
+
+<h2>1. Gece neler yapıldı?</h2>
+<ul>
+  <li><b>Test videoları:</b> YouTube kullanım koşulları yüzünden YouTube'dan indirme yapılmadı. Wikimedia Commons ve Pexels'ten 5 dakikanın altında, açık lisanslı <b>10 araç içi video</b> indirildi (<code>docs/test_videolari.md</code>). Ana test: Ankara–Çorum–İskilip yolu, 4:52.</li>
+  <li><b>Gerçek durum:</b> videolardan saniyede bir kare alındı (530 kare). İki bağımsız inceleyici (yapay zekâ alt ajanları) her karedeki levhaları ayrı ayrı yazdı. Bir levha, ikisi de "net" dediyse sayıldı.</li>
+  <li><b>Uygulamanın kuralları bilgisayarda aynen çalıştırıldı</b> (kare oylaması, tekrar önleme, tek ses). Her kare loglandı. Kural ayarları, model yeniden çalıştırılmadan bu loglar üzerinde tarandı. Telefon videodan yavaş çalışacağı için her şey ~10 FPS için de ölçüldü.</li>
+  <li><b>v4:</b> aynı verilerle, COCO'da ön eğitilmiş hazır YOLO11n'den başlayan uzun eğitim (160. epoch'ta erken durdu). Test setinde v2 ile aynı çıktı; uzun eğitim tek başına yetmiyor.</li>
+  <li><b>DFG verisi:</b> Slovenya'da araç kamerasıyla çekilmiş 6.957 fotoğraf; içindeki 200 levha türünün hepsi etiketli. Bizim 20 sınıfımızdan 19'una giren 3.411 levha etiket olarak eklendi (U dönüşü yasak levhası eşlemede yok). Geri kalan her levha (şerit levhaları, yükseklik ve ağırlık sınırı, başka uyarı üçgenleri, hız sonu levhaları) modele "uyarı verme" diye öğretildi. Eşleme her sınıf için kırpılmış örneklere bakılarak gözle doğrulandı.</li>
+  <li><b>v5b:</b> v4'ün üstüne bizim veri + DFG + 415 "levhasız" kırpıntıyla (toplam 11.570 fotoğraf) eğitildi. İlk deneme (v5) bellek yetmediği için çöktü, kaldığı yerden v5b olarak tamamlandı.</li>
+  <li><b>Kurallar:</b> uzak (görüntü yüksekliğinin %5'inden küçük) kutular sayılmıyor, güven eşiği 0,7. Telefon yavaşsa oylama "5 karenin 3'ü"nden "3 karenin 2'si"ne geçiyor. Masaüstü uygulamasındaki bir eşik tutarsızlığı da düzeltildi.</li>
+  <li><b>Telefon uygulaması:</b> dört sekme var: Sürüş, Kayıtlar (Paylaş düğmeli), Model testi ve Ayarlar. Emülatörde denendi.</li>
+</ul>
+
+<h2>2. Sonuçlar</h2>
+<div class="keep">
+<h3>Gerçek sürüş videoları (42 gerçek levha olayı)</h3>
+<p class="small">"Yakalanan (zamanında)": levha görünürken gelen doğru uyarı; parantezde levhayı geçmeden önce gelenler. "Yanlış uyarı": hiçbir gerçek levhaya denk gelmeyen uyarı. Kurallar: güven eşiği / en küçük kutu. Oylama hepsinde 5 karenin 3'ü. "30 FPS" = videonun her karesi (videoların 7'si 30, 2'si 60, 1'i 25 FPS); "~10 FPS" = her 3. kare. Telefon videodan yavaş çalışacağı için ~10 FPS sütunu daha gerçekçi.</p>
+<table>
+  <thead><tr><th>Model</th><th>Kurallar</th><th>30 FPS: yakalanan (zamanında) / yanlış uyarı</th><th>~10 FPS: yakalanan (zamanında) / yanlış uyarı</th></tr></thead>
+  <tbody>
+    <tr class="old"><td>v2 (eski uygulama)</td><td>0,5 / %2,5 (eski)</td><td>25 (16) / 59</td><td>20 (18) / 38</td></tr>
+    <tr><td>v2</td><td>0,6 / %5</td><td>30 (20) / 28</td><td>21 (18) / 13</td></tr>
+    <tr><td>v2</td><td>0,7 / %5</td><td>27 (20) / 26</td><td>20 (18) / 8</td></tr>
+    <tr class="old"><td>v4</td><td>0,5 / %2,5</td><td>26 (20) / 63</td><td>27 (20) / 42</td></tr>
+    <tr><td>v4</td><td>0,6 / %5</td><td>28 (22) / 27</td><td>26 (22) / 17</td></tr>
+    <tr><td>v4</td><td>0,7 / %5</td><td>29 (23) / 19</td><td>26 (22) / 12</td></tr>
+    <tr class="old"><td>v5b</td><td>0,5 / %2,5</td><td>27 (19) / 58</td><td>31 (23) / 35</td></tr>
+    <tr><td>v5b</td><td>0,6 / %5</td><td>30 (23) / 23</td><td>27 (23) / 10</td></tr>
+    <tr class="best"><td>v5b (yeni uygulama)</td><td>0,7 / %5</td><td>32 (26) / 18</td><td>27 (23) / 6</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="small">Bütün modeller aynı videoların 1280 px kopyalarında ölçüldü. En büyük kazanç kuraldan geldi: uzak kutuları saymamak yanlış uyarıyı her modelde yaklaşık yarıya indirdi. Ölçüm gürültüsü büyük: aynı v2 modeli aynı kurallarla orijinal videolarda 20, küçültülmüş kopyalarda 28 yanlış uyarı verdi. Bu yüzden 30 FPS'te birkaç uyarılık farklar anlamlı değil. v5b'nin v2'ye göre asıl farkı yakalamada: ~10 FPS'te 27'ye 20 (bunun çoğu v4'te de var). DFG verisinin katkısı (v4 → v5b): ~10 FPS'te yanlış uyarı 12'den 6'ya indi.</p>
+
+<h3>Yavaş telefon: oylama FPS'e göre (v5b, güven 0,7)</h3>
+<table>
+  <thead><tr><th>Telefon hızı</th><th>5 karenin 3'ü</th><th>3 karenin 2'si</th><th>Uygulama ne kullanıyor?</th></tr></thead>
+  <tbody>
+    <tr><td>~10 FPS</td><td><b>27 (23) / 6</b></td><td>30 (24) / 13</td><td>5 karenin 3'ü</td></tr>
+    <tr><td>~7,5 FPS</td><td>24 (20) / 3</td><td><b>28 (25) / 6</b></td><td>3 karenin 2'si</td></tr>
+    <tr><td>~6 FPS</td><td>18 (16) / 4</td><td><b>25 (22) / 8</b></td><td>3 karenin 2'si</td></tr>
+    <tr><td>~5 FPS</td><td>16 (15) / 3</td><td><b>24 (21) / 5</b></td><td>3 karenin 2'si</td></tr>
+  </tbody>
+</table>
+<p class="small">Yavaş telefonda 5 kare 0,6–1 saniye sürüyor; yol kenarındaki levha o kadar uzun büyük görünmüyor. Uygulama son 10 saniyede işlediği kare sayısına bakıyor; saniyede 8'in altındaysa 3 karenin 2'sine geçiyor. Emülatör ~2,5 FPS'te çalıştı ve geçiş Kayıtlar'da "AYAR · Oylama 2/3" olarak göründü.</p>
+
+<h3>Test seti (tek fotoğraf, sızıntısız "temiz" test, 308 fotoğraf)</h3>
+<table>
+  <thead><tr><th>Model</th><th>mAP50</th><th>mAP50-95</th><th>Güven 0,7 ile: kesinlik</th><th>100 fotoğrafta yanlış alarm</th></tr></thead>
+  <tbody>
+    <tr><td>v2 (eski model)</td><td>0,896</td><td>0,726</td><td>0,948</td><td>4,5</td></tr>
+    <tr><td>v4</td><td>0,895</td><td>0,728</td><td>0,930</td><td>6,2</td></tr>
+    <tr class="best"><td>v5b</td><td>0,894</td><td>0,725</td><td>0,927</td><td>6,5</td></tr>
+    <tr><td>v5b, telefondaki .tflite (FP16)</td><td>0,892</td><td>0,727</td><td>—</td><td>—</td></tr>
+  </tbody>
+</table>
+<p class="small">Test setinde üç model aynı seviyede. Tek fotoğraf yanlış alarmında v2 biraz önde (308 fotoğrafta 14'e 20; farkın yarısı yaya geçidi bilgi levhası). Seçim videoya göre yapıldı, çünkü uygulama videoda çalışıyor ve kare oylaması tek karelik hataların çoğunu eliyor. Telefondaki .tflite, bilgisayardaki modelle aynı puanı alıyor.</p>
+
+<div class="box blue">
+  <h3>Karar</h3>
+  <ul>
+    <li><b>Model: v5b</b> (YOLO11n, 640 px, FP16 .tflite 5,1 MB). Telefonda ve masaüstü uygulamasında.</li>
+    <li><b>Kurallar:</b> güven ≥ 0,7; kutu yüksekliği ≥ görüntünün %5'i; oylama 5 karenin 3'ü (8 FPS altında 3 karenin 2'si); aynı levha için en az 5 sn ara; aynı anda tek ses.</li>
+    <li>Ayarlar ekranındaki kaydırıcıyla güven eşiği değiştirilebilir. Uygulama kapanınca 0,7'ye döner.</li>
+  </ul>
+</div>
+
+<h2>3. Telefonda deneme (kablo gerekmez)</h2>
+<ol>
+  <li>APK'yı kendine gönder (WhatsApp, Telegram, Drive) ve telefonda aç. "Bilinmeyen kaynak" iznini ver. Play Protect uyarırsa "Yine de yükle".</li>
+  <li><b>Model testi</b> sekmesi → <b>Testi başlat</b>. Beklenen sonuç: <b>11/11 doğru</b>. Kartlarda süre (ms) yazar. Ayarlar'dan GPU'yu açıp kapatarak bir kez daha dene.</li>
+  <li><b>Sürüş</b> sekmesi: bilgisayarda bir test videosunu tam ekran aç, telefonun kamerasını ekrana tut. Sol altta FPS ve "oylama 3/5" ya da "2/3" yazar.</li>
+  <li><b>Kayıtlar</b> sekmesi → <b>Paylaş</b>: oturum dosyasını bana gönder. PERF satırlarından telefonun gerçek hızını, UYARI ve ONAY satırlarından yanlış uyarıları ve kaçırmaları çıkarırım.</li>
+</ol>
+<p class="small">Ayrıntı: <code>docs/telefon_testi.md</code>. Yöntem ve bütün sayılar: <code>docs/video_testi.md</code>.</p>
+
+<h2>4. Sınırlar ve sıradaki adımlar</h2>
+<ul>
+  <li>Kurallar (%5, güven 0,7, FPS'e göre oylama) aynı 10 videoda seçildi, bu yüzden sonuçlar biraz iyimser. Kaba adımlar seçildi ve her biri üç modelde, birden fazla FPS'te aynı yönde sonuç verdi. Asıl karar gerçek yol testinde verilecek.</li>
+  <li>42 levha olayı az; levha türü bazında sonuç çıkarmaya yetmez.</li>
+  <li>30 FPS'te kalan 18 yanlış uyarının 10'u uzaktaki sarı yol çalışması levhaları, başka uyarı üçgenleri (kasis, düşen kaya, çift viraj) ve ikaz direkleri; en çok "hız 30" (5) olarak çıkıyor. ~10 FPS'teki 15 kaçırmanın 8'i yol kenarında bir saniyeden kısa görünen hız 50 levhaları; Ankara'da yan yoldaki iki dur levhası da kaçtı. DFG verisi (v4 → v5b) 30 FPS'te yanlış uyarıyı neredeyse hiç azaltmadı (19 → 18), ~10 FPS'te yarıya indirdi (12 → 6).</li>
+  <li>Telefonun gerçek hızı henüz bilinmiyor. ~5 FPS'te en iyi ayarla bile 42 levhanın 24'ü yakalanıyor.</li>
+  <li>Sırada: telefonda hız ölçümü (Hafta 1 kapısı: ≥ 5 FPS) ve gerçek yolda saha testi (<code>docs/saha_testi.md</code>). Kendi telefon videolarımızdan zor örnekler (sarı levhalar, şerit levhaları) eğitime eklenecek.</li>
+</ul>
+
+<div class="box amber">
+  <b>Lisans notu:</b> DFG verisi <b>CC BY-NC-SA 4.0</b> lisanslı. Ticari olmayan kullanım serbest, atıf zorunlu (Tabernik &amp; Skočaj, IEEE T-ITS 2019). Bu veriyle eğitilen v5b modeli ticari bir uygulamada kullanılamaz; öğrenci projesi için uygun. Atıf uygulamanın açılış ve Ayarlar ekranlarına eklendi. Ana veri seti: Hootbu, Traffic-Sign-Recognition-V2-Turkiye (Roboflow, CC BY 4.0).
+</div>
+
+</body>
+</html>

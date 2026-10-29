@@ -37,6 +37,16 @@ void main() {
         expect(f.update([d('stop', 0.9, 0.01)]), isEmpty);
       }
     });
+
+    test("yavaş telefonda (< 8 FPS) oylama 3 karenin 2'si", () {
+      expect(votingFor(5), (window: 3, minHits: 2));
+      expect(votingFor(12), (window: 5, minHits: 3));
+      final v = votingFor(5);
+      final f = DetectionFilter(window: v.window, minHits: v.minHits);
+      expect(f.update([d('stop')]), isEmpty);
+      expect(f.update([]), isEmpty);
+      expect(f.update([d('stop')]), {'stop'});
+    });
   });
 
   group('Cooldown', () {

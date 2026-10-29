@@ -1,7 +1,8 @@
 """Modeli UYGULAMANIN çalışma ayarlarıyla ölçer (tek kare): yanlış alarm ("halüsinasyon"), kaçırma, yakalama.
 
-Uygulamadaki kurallar (mobile/lib/alerts.dart + main.dart): güven >= 0,6; speed30/50/70 >= 0,65, pedestrian_info
->= 0,70; kutu yüksekliği >= görüntünün %5'i. (5 karede 3 oylaması tek kareyle ölçülemez; gerçek uygulama daha temkinli.)
+Uygulamadaki kurallar (mobile/lib/alerts.dart + main.dart): güven >= 0,7 (29 Ekim sabahı 0,6, öncesinde 0,5); sınıf tabanları
+(speed30/50/70 0,65, pedestrian_info 0,70) bu eşiği geçmediği için etkisiz; kutu yüksekliği >= görüntünün %5'i.
+(Kare oylaması tek kareyle ölçülemez; gerçek uygulama daha temkinli.)
 Eşleşme: aynı sınıf ve IoU >= 0,5 -> doğru. Eşleşmeyen tahmin -> yanlış alarm (başka bir levhanın üstündeyse
 "yanlış sınıf", değilse "boş yerde"). Eşleşmeyen gerçek levha -> kaçırma.
 
@@ -17,7 +18,7 @@ import yaml
 from ultralytics import YOLO
 
 ML = Path(__file__).resolve().parents[1]
-MIN_CONF, MIN_H = 0.6, 0.05
+MIN_CONF, MIN_H = 0.7, 0.05
 FLOOR = {"speed30": 0.65, "speed50": 0.65, "speed70": 0.65, "pedestrian_info": 0.7}
 
 

@@ -4,6 +4,8 @@ Kurallar telefondakinin aynısı (desktop/app.py Rules).
 
 Çalıştırma (ml/ klasöründe):  .venv\\Scripts\\python scripts\\esik_tarama.py <log_etiketi> [kare_adımı=1]
 kare_adımı 3: 30 FPS videonun her 3. karesi, yani telefonun ~10 FPS'i (oylama penceresi zamanda daha uzun sürer).
+Adım sabit: test videolarının 7'si 30, 2'si 60, 1'i 25 FPS; o üçünde aynı adım 2 kat / 0,83 kat FPS demek.
+Oylamada 2/3 telefonun yavaşken kullandığı ayar (alerts.dart votingFor; adım 4–6 = ~7,5–5 FPS).
 Dikkat: bu 10 video aynı zamanda test; eşik buna göre seçilirse sonuç iyimser olur. Kaba adımlarla seç.
 """
 
@@ -42,7 +44,7 @@ if __name__ == "__main__":
     print(f"{len(vids)} video, {sum(len(e) for e, _ in vids.values())} gerçek levha olayı, model: {tag}, kare adımı {step}")
     print("güven  sınıf_tabanı  en_küçük_kutu  oylama | yakalanan zamanında kaçan yanlış_alarm")
     rows = []
-    for conf, floors, h, (win, hits) in itertools.product((0.4, 0.5, 0.6, 0.7), (True, False), (0.02, 0.025, 0.035, 0.05), ((5, 3), (5, 4), (7, 5))):
+    for conf, floors, h, (win, hits) in itertools.product((0.4, 0.5, 0.6, 0.7), (True, False), (0.02, 0.025, 0.035, 0.05), ((5, 3), (5, 4), (7, 5), (3, 2))):
         cmc = {k: max(v, conf) for k, v in CLASS_MIN_CONF.items()} if floors else {}
         caught = timely = fa = 0
         for evs, fr in vids.values():

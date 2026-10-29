@@ -6,7 +6,7 @@ import 'alerts.dart';
 import 'event_log.dart';
 
 /// Uygulamaya gömülü, cevabı bilinen test fotoğrafları (`assets/test_images/<sınıf>.jpg`; "bos" = levha yok).
-/// PC'de v2 modeli hepsini doğru buluyor; telefonda fark çıkarsa sorun model değil entegrasyondur.
+/// PC'de v5b modeli (.pt ve telefondaki FP16 .tflite) hepsini doğru buluyor; telefonda fark çıkarsa sorun model değil entegrasyondur.
 const _cases = [
   'stop', 'noentry', 'giveway', 'speed30', 'speed50', 'speed70',
   'pedestrian_info', 'keepright', 'priorityroad', 'schoolpassing', 'bos',

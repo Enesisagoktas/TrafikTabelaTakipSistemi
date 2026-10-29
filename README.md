@@ -12,6 +12,6 @@
 | `desktop/` | Windows uygulaması (Python + ONNX Runtime + web kamerası) — ilk sürüm hazır |
 | `docs/` | Belgeler |
 
-Veri seti: [Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye), Hootbu, CC BY 4.0.
+Veri setleri: [Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye), Hootbu, CC BY 4.0; [DFG Traffic Sign Dataset](https://www.vicos.si/resources/dfg/), Tabernik & Skočaj, "Deep Learning for Large-Scale Traffic-Sign Detection and Recognition", IEEE T-ITS 2019, CC BY-NC-SA 4.0. v5b modeli DFG ile eğitildiği için yalnızca ticari olmayan kullanım içindir.
 
 > Deneysel bir prototiptir; sürücü güvenlik sistemi değildir.

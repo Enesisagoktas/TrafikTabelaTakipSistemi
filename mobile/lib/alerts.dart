@@ -64,6 +64,11 @@ class Throttle {
   }
 }
 
+/// Oylama FPS'e göre: yavaş telefonda (ortalama < 8 FPS) 3 karenin 2'si, değilse 5 karenin 3'ü. Yavaşta 5 kare
+/// 0,6–1 sn sürer, levha o kadar uzun büyük görünmez. 10 test videosunda (v5b, güven 0,7) ~5 FPS'te yakalanan levha
+/// 16 → 24, yanlış uyarı 3 → 5; 10 FPS'te ise 5'te 3 daha az yanlış uyarı veriyor (29 Ekim, docs/video_testi.md).
+({int window, int minHits}) votingFor(double fps) => fps < 8 ? (window: 3, minHits: 2) : (window: 5, minHits: 3);
+
 /// Güven eşiği + en küçük kutu + "son [window] karenin en az [minHits]'inde görüldü" oylaması.
 class DetectionFilter {
   DetectionFilter({
