@@ -5,30 +5,41 @@ library;
 /// Eklentiden gelen tek tespit; [height] kutunun normalize yüksekliği (0–1).
 typedef Det = ({String name, double conf, double height});
 
-/// Model sınıfı -> Türkçe cümle ve öncelik (1 kritik, 2 uyarı/yasak, 3 bilgi).
-/// Ses dosyası: `assets/sounds/<sınıf>.wav`
-const signs = <String, ({String text, int priority})>{
-  'stop': (text: 'Dur', priority: 1),
-  'noentry': (text: 'Girilmez', priority: 1),
-  'giveway': (text: 'Yol ver', priority: 1),
-  'schoolpassing': (text: 'Dikkat, okul geçidi', priority: 1),
-  'pedestrian_risk': (text: 'Dikkat, yaya geçidi', priority: 1),
-  'dangerousleft': (text: 'Sola tehlikeli viraj', priority: 2),
-  'dangerousright': (text: 'Sağa tehlikeli viraj', priority: 2),
-  'crossroads': (text: 'Kavşak yaklaşıyor', priority: 2),
-  'caution': (text: 'Dikkat', priority: 2),
-  'donotturnleft': (text: 'Sola dönülmez', priority: 2),
-  'donotturnright': (text: 'Sağa dönülmez', priority: 2),
-  'nouturn': (text: 'U dönüşü yasak', priority: 2),
-  'keepleft': (text: 'Soldan gidiniz', priority: 2),
-  'keepright': (text: 'Sağdan gidiniz', priority: 2),
-  'speed30': (text: 'Hız sınırı otuz', priority: 2),
-  'speed50': (text: 'Hız sınırı elli', priority: 2),
-  'speed70': (text: 'Hız sınırı yetmiş', priority: 2),
-  'nostopping': (text: 'Duraklamak ve park etmek yasak', priority: 3),
-  'priorityroad': (text: 'Ana yol', priority: 3),
-  'pedestrian_info': (text: 'Yaya geçidi', priority: 3),
+/// Model sınıfı -> Türkçe cümle, kısa biçim ve öncelik (1 kritik, 2 uyarı/yasak, 3 bilgi).
+/// Kısa biçim ekran şeridinde ve arkada başka bir uyarı beklerken seste kullanılır (uzun cümleler
+/// art arda gelen levhalarda ikinci uyarıyı 1–2 sn geciktiriyordu; 29 Ekim canlı demo).
+/// Ses dosyaları: `assets/sounds/<sınıf>.wav` (cümle) ve `assets/sounds/<sınıf>_kisa.wav` (kısa biçim).
+/// `crossroads` aslında "ana yol – tali yol kavşağı" üçgeni (veri setinde "+" kavşak levhası yok).
+const signs = <String, ({String text, String short, int priority})>{
+  'stop': (text: 'Dur', short: 'Dur', priority: 1),
+  'noentry': (text: 'Girilmez', short: 'Girilmez', priority: 1),
+  'giveway': (text: 'Yol ver', short: 'Yol ver', priority: 1),
+  'schoolpassing': (text: 'Dikkat, okul geçidi', short: 'Okul geçidi', priority: 1),
+  'pedestrian_risk': (text: 'Dikkat, yaya geçidi', short: 'Yaya geçidi', priority: 1),
+  'dangerousleft': (text: 'Sola tehlikeli viraj', short: 'Sola viraj', priority: 2),
+  'dangerousright': (text: 'Sağa tehlikeli viraj', short: 'Sağa viraj', priority: 2),
+  'crossroads': (text: 'Kavşak yaklaşıyor', short: 'Kavşak', priority: 2),
+  'caution': (text: 'Dikkat', short: 'Dikkat', priority: 2),
+  'donotturnleft': (text: 'Sola dönülmez', short: 'Sola dönülmez', priority: 2),
+  'donotturnright': (text: 'Sağa dönülmez', short: 'Sağa dönülmez', priority: 2),
+  'nouturn': (text: 'U dönüşü yasak', short: 'U dönüşü yasak', priority: 2),
+  'keepleft': (text: 'Soldan gidiniz', short: 'Soldan', priority: 2),
+  'keepright': (text: 'Sağdan gidiniz', short: 'Sağdan', priority: 2),
+  'speed30': (text: 'Hız sınırı otuz', short: 'Otuz', priority: 2),
+  'speed50': (text: 'Hız sınırı elli', short: 'Elli', priority: 2),
+  'speed70': (text: 'Hız sınırı yetmiş', short: 'Yetmiş', priority: 2),
+  'nostopping': (text: 'Duraklamak ve park etmek yasak', short: 'Park yasak', priority: 3),
+  'priorityroad': (text: 'Ana yol', short: 'Ana yol', priority: 3),
+  'pedestrian_info': (text: 'Yaya geçidi', short: 'Yaya geçidi', priority: 3),
 };
+
+/// Modelin tanıdığı ama uyarısı olmayan levha (v6'daki 21. sınıf: 20 sınıfın dışındaki her trafik levhası).
+/// Ekranda gösterilir, Kayıtlar'a ONAY olarak düşer, seslendirilmez. Model yabancı levhayı bildiği bir
+/// sınıfa zorlamasın diye eklendi (taş düşebilir → kavşak gibi yanlış uyarılar, 29 Ekim).
+const otherSign = 'diger_levha';
+
+/// Ekran şeridindeki ad: kataloğun kısa biçimi, diğer levha için "Diğer levha".
+String label(String name) => name == otherSign ? 'Diğer levha' : (signs[name]?.short ?? name);
 
 /// Zayıf sınıfların taban eşikleri (Hafta 2 hata analizi: hız levhaları birbirine,
 /// pedestrian_info başka mavi levhalara karışıyor).
@@ -146,4 +157,7 @@ class AlertQueue {
     _items.removeWhere((i) => now.difference(i.at) > maxAge);
     return _items.isEmpty ? null : _items.removeAt(0).name;
   }
+
+  /// [next]'ten hemen sonra: arkada başka uyarı bekliyor mu (bekliyorsa kısa biçim çalınır).
+  bool get isNotEmpty => _items.isNotEmpty;
 }

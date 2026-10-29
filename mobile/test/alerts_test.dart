@@ -105,6 +105,24 @@ void main() {
       final q = AlertQueue()..add('stop', 1, at(0));
       expect(q.next(at(3.5)), isNull);
     });
+
+    test('arkada başka uyarı bekliyorsa isNotEmpty (kısa biçim çalınır)', () {
+      final q = AlertQueue()
+        ..add('stop', 1, at(0))
+        ..add('speed70', 2, at(0));
+      expect(q.next(at(0)), 'stop');
+      expect(q.isNotEmpty, isTrue);
+      expect(q.next(at(0)), 'speed70');
+      expect(q.isNotEmpty, isFalse);
+    });
+  });
+
+  group('label', () {
+    test('kısa biçim; diğer levha ve bilinmeyen sınıf', () {
+      expect(label('speed70'), 'Yetmiş');
+      expect(label(otherSign), 'Diğer levha');
+      expect(label('bilinmeyen'), 'bilinmeyen');
+    });
   });
 
   group('classThresholds', () {
@@ -144,5 +162,7 @@ void main() {
     ];
     expect(signs.keys.toSet(), modelNames.toSet());
     expect(signs.values.every((s) => s.priority >= 1 && s.priority <= 3), isTrue);
+    expect(signs.values.every((s) => s.short.isNotEmpty && s.short.length <= s.text.length), isTrue);
+    expect(signs.containsKey(otherSign), isFalse); // diğer levha seslendirilmez
   });
 }

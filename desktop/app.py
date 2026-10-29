@@ -22,10 +22,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MODEL = Path(__file__).with_name("levha.onnx")
 SOUNDS = ROOT / "mobile" / "assets" / "sounds"
-SIGNS = {  # sınıf -> (cümle, öncelik); tek kaynak: alerts.dart
-    m[1]: (m[2], int(m[3]))
-    for m in re.finditer(r"'(\w+)': \(text: '([^']+)', priority: (\d)\)", (ROOT / "mobile/lib/alerts.dart").read_text("utf-8"))
-}
+_CATALOG = re.findall(r"'(\w+)': \(text: '([^']+)', short: '([^']+)', priority: (\d)\)", (ROOT / "mobile/lib/alerts.dart").read_text("utf-8"))
+SIGNS = {n: (text, int(p)) for n, text, _, p in _CATALOG}  # sınıf -> (cümle, öncelik); tek kaynak: alerts.dart
+SHORT = {n: short for n, _, short, _ in _CATALOG}  # kısa biçim: arkada başka uyarı beklerken (<sınıf>_kisa.wav)
 # Hız levhaları birbirine, pedestrian_info başka mavi levhalara karışıyor (YOL_HARITASI, Hafta 2 sonuçları).
 CLASS_MIN_CONF = {"speed30": 0.65, "speed50": 0.65, "speed70": 0.65, "pedestrian_info": 0.7}
 
@@ -86,18 +85,20 @@ class Rules:
 
     def __init__(self, **filter_args):
         self.filt, self.cool, self.queue = DetectionFilter(**filter_args), Cooldown(), AlertQueue()
-        self.busy_until, self.confirmed = 0.0, set()
+        self.busy_until, self.confirmed, self.brief = 0.0, set(), False
 
     def step(self, dets, now):
         """dets: [(sınıf, güven, normalize yükseklik)] -> (yeni onaylanan sınıflar, çalınacak uyarı ya da None).
-        Katalogda (alerts.dart) olmayan sınıf yok sayılır: ör. diger_levha, yani tanınan ama uyarısı olmayan levha."""
+        Katalogda (alerts.dart) olmayan sınıf yok sayılır: ör. diger_levha, yani tanınan ama uyarısı olmayan levha.
+        Uyarı çalınırken arkada başka uyarı bekliyorsa `brief` True olur: kısa biçim (<sınıf>_kisa.wav) çalınır."""
         seen = self.filt.update([d for d in dets if d[0] in SIGNS])
         new, self.confirmed = seen - self.confirmed, seen
         for n in self.cool.update(seen, now):
             self.queue.add(n, SIGNS[n][1], now)
         if now < self.busy_until or not (n := self.queue.next(now)):
             return new, None
-        with wave.open(str(SOUNDS / f"{n}.wav")) as w:
+        self.brief = bool(self.queue.items)
+        with wave.open(str(SOUNDS / f"{n}{'_kisa' if self.brief else ''}.wav")) as w:
             self.busy_until = now + w.getnframes() / w.getframerate()
         return new, n
 
@@ -123,9 +124,14 @@ def selftest():
     assert q.next(3.5) is None
     r = Rules()
     assert [r.step([("stop", 0.9, 0.1)], t)[1] for t in (0, 0.1, 0.2)] == [None, None, "stop"]
+    assert not r.brief
     r = Rules()
     assert [r.step([("diger_levha", 0.99, 0.2)], t) for t in (0, 0.1, 0.2)][-1] == (set(), None)
-    assert len(SIGNS) == 20 and all(1 <= p <= 3 for _, p in SIGNS.values())
+    r = Rules()
+    # aynı öncelik ve aynı an: kuyruk ada göre sıralar, önce yol ver çalar
+    assert [r.step([("stop", 0.9, 0.1), ("giveway", 0.9, 0.1)], t)[1] for t in (0, 0.1, 0.2)][-1] == "giveway"
+    assert r.brief  # yol ver çalarken dur bekliyor: kısa biçim
+    assert len(SIGNS) == 20 and all(1 <= p <= 3 for _, p in SIGNS.values()) and set(SHORT) == set(SIGNS)
     print("öz-test geçti")
 
 
@@ -192,11 +198,12 @@ def main(source, model_path=None, quiet=False):
         new, n = rules.step(dets, now)
         log.writelines(f"{now:.2f};onay;{c};;\n" for c in new)  # 5 karenin 3'üne yeni giren
         if n:
+            text = SHORT[n] if rules.brief else SIGNS[n][0]
             if not quiet:
-                winsound.PlaySound(str(SOUNDS / f"{n}.wav"), winsound.SND_FILENAME | winsound.SND_ASYNC)
-                banner = render(SIGNS[n][0], r.orig_shape[1])
+                winsound.PlaySound(str(SOUNDS / f"{n}{'_kisa' if rules.brief else ''}.wav"), winsound.SND_FILENAME | winsound.SND_ASYNC)
+                banner = render(text, r.orig_shape[1])
             log.write(f"{now:.2f};uyari;{n};;\n")
-            print(f"{now:6.1f} sn  uyarı: {SIGNS[n][0]}", flush=True)
+            print(f"{now:6.1f} sn  uyarı: {text}", flush=True)
         if quiet:
             continue
         frame = r.plot()

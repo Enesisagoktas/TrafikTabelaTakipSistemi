@@ -8,11 +8,14 @@ Kopya kuralı (docs/veri_denetimi.md ile aynı): bizim valid/test görsellerinde
 görsel atılır (test sızıntısı olmasın); bizim train'den birine <= 4 olan da atılır (zaten var).
 
 Çalıştırma (ml/ klasöründe):
-  .venv\\Scripts\\python scripts\\ek_veri.py <kaynak_klasor> <ad> <esleme.json> [--atla sinif1,sinif2] [--arka-plan]
-esleme.json: {"kaynak_sinif_adi": "bizim_sinif_adi", ...}; eşlenmeyen kutular atılır.
+  .venv\\Scripts\\python scripts\\ek_veri.py <kaynak_klasor> <ad> <esleme.json> [--atla sinif1,sinif2] [--at sinif3] [--arka-plan] [--diger]
+esleme.json: {"kaynak_sinif_adi": "bizim_sinif_adi", ...}; eşlenmeyen kutular atılır (--diger yoksa).
 --atla: bu kaynak sınıflarından birini içeren görsel tamamen atlanır (bizimkine benzeyen ama farklı tasarım).
+--at: bu kaynak sınıflarının kutuları atılır, görsel kalır (levha olmayan sınıflar: trafik ışığı, araç...).
 --arka-plan: eşlenen kutusu kalmayan görseller etiketsiz (arka plan) olarak tutulur. Yalnızca kaynak bütün
   levhaları etiketliyorsa kullan; yoksa etiketsiz kalan gerçek levhalar modele "levha değil" diye öğretilir.
+--diger: eşlenmeyen (ve --at'ta olmayan) her kutu 21. sınıf `diger_levha` olur: tanınan ama uyarısı olmayan levha.
+  Birleşik liste için data_v6.yaml (21 sınıf) yazılır. Kaynak bütün levhaları etiketliyorsa anlamlı (v6, 29 Ekim).
 """
 
 import argparse
@@ -67,7 +70,8 @@ def rebuild_list(ours):
     (DATA / "train_birlesik.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     cfg = {"path": "levha640", "train": "train_birlesik.txt", "val": "val_temiz.txt", "test": "test_temiz.txt",
            "nc": len(ours), "names": ours}
-    (DATA / "data_v5.yaml").write_text(yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    out = DATA / ("data_v6.yaml" if "diger_levha" in ours else "data_v5.yaml")  # v6: 21 sınıf
+    out.write_text(yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8")
     return len(lines)
 
 
@@ -77,10 +81,14 @@ def main():
     ap.add_argument("ad")
     ap.add_argument("esleme", type=Path)
     ap.add_argument("--atla", default="")
+    ap.add_argument("--at", default="")
     ap.add_argument("--arka-plan", action="store_true")
+    ap.add_argument("--diger", action="store_true")
     a = ap.parse_args()
 
     ours = yaml.safe_load((DATA / "data.yaml").read_text(encoding="utf-8"))["names"]
+    if a.diger:
+        ours = ours + ["diger_levha"]
     src_names = names_of(a.kaynak)
     mapping = json.loads(a.esleme.read_text(encoding="utf-8-sig"))  # Windows'ta yazılan dosyada BOM olabilir
     bad = [k for k, v in mapping.items() if k not in src_names or v not in ours]
@@ -88,6 +96,9 @@ def main():
         raise SystemExit(f"eşlemede bilinmeyen sınıf: {bad}")
     to_ours = {src_names.index(k): ours.index(v) for k, v in mapping.items()}
     skip = {src_names.index(s) for s in a.atla.split(",") if s}
+    drop = {src_names.index(s) for s in a.at.split(",") if s}
+    if a.diger:
+        to_ours.update({i: ours.index("diger_levha") for i in range(len(src_names)) if i not in to_ours and i not in skip and i not in drop})
 
     hv = np.array([phash(p) for s in ("valid", "test") for p in (DATA / s / "images").glob("*.jpg")], dtype=np.uint64)
     ht = np.array([phash(p) for p in (DATA / "train" / "images").glob("*.jpg")], dtype=np.uint64)

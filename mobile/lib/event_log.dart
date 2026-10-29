@@ -96,7 +96,7 @@ class LogsScreen extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
-                'UYARI: söylenen uyarı · ONAY: levha oylamayı geçti (5 karenin 3\'ü; 8 FPS altında 3 karenin 2\'si) · HAM: modelin ham tespiti (sınıf başına saniyede en fazla 1) · PERF: 10 sn ortalama hız · AYAR: ayar değişikliği',
+                'UYARI: söylenen uyarı ("kısa": arkada başka uyarı beklediği için kısa biçim) · ONAY: levha oylamayı geçti (5 karenin 3\'ü; 8 FPS altında 3 karenin 2\'si; "Diğer levha" seslendirilmez) · HAM: modelin ham tespiti (sınıf başına saniyede en fazla 1) · PERF: 10 sn ortalama hız · AYAR: ayar değişikliği',
                 style: TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ),

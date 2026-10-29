@@ -5,6 +5,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:ultralytics_yolo/ultralytics_yolo.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import 'package:flutter/foundation.dart' show setEquals;
+
 import 'alerts.dart';
 import 'event_log.dart';
 import 'model_test.dart';
@@ -132,6 +134,7 @@ class _DriveScreenState extends State<DriveScreen> {
   final _rawLog = Throttle(const Duration(seconds: 1));
   bool _speaking = false;
   String _banner = '';
+  Set<String> _seen = const {}; // oylamayı geçen levhalar (diğer levha dâhil): ekran şeridi
   String _perf = 'Model yükleniyor…';
   int _frames = 0;
   double _msSum = 0;
@@ -170,11 +173,13 @@ class _DriveScreenState extends State<DriveScreen> {
     }
     final seen = _activeFilter.update(dets);
     for (final n in _confirmed.update(seen)) {
-      EventLog.instance.add('ONAY', '$n (${signs[n]?.text ?? n})');
+      EventLog.instance.add('ONAY', '$n (${label(n)})');
     }
-    for (final n in _cooldown.update(seen, now)) {
-      _queue.add(n, signs[n]?.priority ?? 3, now);
+    // Yalnızca katalogdaki sınıflar uyarı olur; diğer levha (ve bilinmeyen sınıf) ekranda kalır, seslendirilmez.
+    for (final n in _cooldown.update(seen.where(signs.containsKey).toSet(), now)) {
+      _queue.add(n, signs[n]!.priority, now);
     }
+    if (mounted && !setEquals(seen, _seen)) setState(() => _seen = seen);
     _speak();
   }
 
@@ -206,11 +211,12 @@ class _DriveScreenState extends State<DriveScreen> {
     _speaking = true;
     try {
       for (var n = _queue.next(DateTime.now()); n != null; n = _queue.next(DateTime.now())) {
-        final text = signs[n]?.text ?? n;
-        EventLog.instance.add('UYARI', '$text ($n)');
+        final brief = _queue.isNotEmpty; // arkada başka uyarı bekliyor: kısa biçim, ikinci levha gecikmesin
+        final text = brief ? signs[n]!.short : signs[n]!.text;
+        EventLog.instance.add('UYARI', '$text ($n${brief ? ', kısa' : ''})');
         if (mounted) setState(() => _banner = text);
         if (!settings.sound) continue;
-        await _player.setAsset('assets/sounds/$n.wav');
+        await _player.setAsset('assets/sounds/$n${brief ? '_kisa' : ''}.wav');
         await _player.play(); // çalma bitince döner
       }
     } catch (e) {
@@ -247,6 +253,23 @@ class _DriveScreenState extends State<DriveScreen> {
                 decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
                 child: Text(_banner, style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
               ),
+            ),
+          // Şu an görülen (oylamayı geçen) bütün levhalar; uyarı sırası beklemeden hepsi aynı anda görünür.
+          if (_seen.isNotEmpty)
+            Positioned(
+              left: 8,
+              bottom: 52,
+              child: Wrap(spacing: 6, runSpacing: 4, children: [
+                for (final n in _seen.toList()..sort())
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: n == otherSign ? Colors.blueGrey.shade700 : Colors.orange.shade800,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(label(n), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                  ),
+              ]),
             ),
           Positioned(
             left: 8,
