@@ -34,6 +34,10 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 küçültmesi WorkManager'ın Room veritabanı sınıfını siliyor ve uygulama açılışta çöküyor
+            // ("Failed to create an instance of class androidx.work.impl.WorkDatabase"; emülatörde görüldü, 29 Ekim).
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
