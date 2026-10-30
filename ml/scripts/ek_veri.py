@@ -14,8 +14,10 @@ esleme.json: {"kaynak_sinif_adi": "bizim_sinif_adi", ...}; eşlenmeyen kutular a
 --at: bu kaynak sınıflarının kutuları atılır, görsel kalır (levha olmayan sınıflar: trafik ışığı, araç...).
 --arka-plan: eşlenen kutusu kalmayan görseller etiketsiz (arka plan) olarak tutulur. Yalnızca kaynak bütün
   levhaları etiketliyorsa kullan; yoksa etiketsiz kalan gerçek levhalar modele "levha değil" diye öğretilir.
---diger: eşlenmeyen (ve --at'ta olmayan) her kutu 21. sınıf `diger_levha` olur: tanınan ama uyarısı olmayan levha.
+--diger: eşlenmeyen (ve --at'ta olmayan) her kutu son sınıf `diger_levha` olur: tanınan ama uyarısı olmayan levha.
   Birleşik liste için data_v6.yaml (21 sınıf) yazılır. Kaynak bütün levhaları etiketliyorsa anlamlı (v6, 29 Ekim).
+--ek-siniflar kasis,durak,...: bizim 20 sınıfa eklenen yeni (sesli) sınıflar; eşlemede hedef olarak kullanılabilir.
+  Sıra: 20 temel + ek sınıflar + (varsa) diger_levha. Yaml adı: --yaml (varsayılan data_v7.yaml).
 """
 
 import argparse
@@ -64,13 +66,14 @@ def names_of(src):
     return n if isinstance(n, list) else [n[k] for k in sorted(n)]
 
 
-def rebuild_list(ours):
+def rebuild_list(ours, yaml_name=None):
     lines = [f"./train/images/{p.name}" for p in sorted((DATA / "train" / "images").glob("*.jpg"))]
     lines += [f"./{p.relative_to(DATA).as_posix()}" for p in sorted(DATA.glob("ek/*/images/*.jpg"))]
     (DATA / "train_birlesik.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     cfg = {"path": "levha640", "train": "train_birlesik.txt", "val": "val_temiz.txt", "test": "test_temiz.txt",
            "nc": len(ours), "names": ours}
-    out = DATA / ("data_v6.yaml" if "diger_levha" in ours else "data_v5.yaml")  # v6: 21 sınıf
+    # v5: 20 sınıf, v6: 21 (diger_levha), v7: 20 + ek sınıflar + diger_levha
+    out = DATA / (yaml_name or ("data_v6.yaml" if "diger_levha" in ours else "data_v5.yaml"))
     out.write_text(yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8")
     return len(lines)
 
@@ -84,11 +87,16 @@ def main():
     ap.add_argument("--at", default="")
     ap.add_argument("--arka-plan", action="store_true")
     ap.add_argument("--diger", action="store_true")
+    ap.add_argument("--ek-siniflar", default="")
+    ap.add_argument("--yaml", default=None)
     a = ap.parse_args()
 
     ours = yaml.safe_load((DATA / "data.yaml").read_text(encoding="utf-8"))["names"]
+    ours = ours + [s for s in a.ek_siniflar.split(",") if s]
     if a.diger:
         ours = ours + ["diger_levha"]
+    if a.ek_siniflar and not a.yaml:
+        a.yaml = "data_v7.yaml"
     src_names = names_of(a.kaynak)
     mapping = json.loads(a.esleme.read_text(encoding="utf-8-sig"))  # Windows'ta yazılan dosyada BOM olabilir
     bad = [k for k, v in mapping.items() if k not in src_names or v not in ours]
@@ -138,7 +146,7 @@ def main():
         for c, *_ in kept:
             per_class[ours[c]] = per_class.get(ours[c], 0) + 1
     print(json.dumps({"ad": a.ad, **stats, "sinif_kutu": dict(sorted(per_class.items()))}, ensure_ascii=False))
-    print("train_birlesik.txt satır:", rebuild_list(ours))
+    print("train_birlesik.txt satır:", rebuild_list(ours, a.yaml))
 
 
 if __name__ == "__main__":

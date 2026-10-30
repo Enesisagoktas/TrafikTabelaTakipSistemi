@@ -120,7 +120,7 @@ void main() {
   group('label', () {
     test('kısa biçim; diğer levha ve bilinmeyen sınıf', () {
       expect(label('speed70'), 'Yetmiş');
-      expect(label(otherSign), 'Diğer levha');
+      expect(label(otherSign), 'Bilinmeyen levha');
       expect(label('bilinmeyen'), 'bilinmeyen');
     });
   });
@@ -154,11 +154,12 @@ void main() {
     });
   });
 
-  test("katalogda modelin 20 sınıfının hepsi var ve öncelikler 1-3", () {
+  test("katalogda modelin 28 sesli sınıfının hepsi var ve öncelikler 1-3", () {
     const modelNames = [
       'caution', 'crossroads', 'dangerousleft', 'dangerousright', 'donotturnleft', 'donotturnright', 'giveway',
       'keepleft', 'keepright', 'noentry', 'nostopping', 'nouturn', 'pedestrian_info', 'pedestrian_risk',
       'priorityroad', 'schoolpassing', 'speed30', 'speed50', 'speed70', 'stop',
+      'kasis', 'durak', 'demiryolu', 'refuj_basi', 'donus_adasi', 'ileri_saga', 'ileri_sola', 'ada_etrafinda', // v7
     ];
     expect(signs.keys.toSet(), modelNames.toSet());
     expect(signs.values.every((s) => s.priority >= 1 && s.priority <= 3), isTrue);

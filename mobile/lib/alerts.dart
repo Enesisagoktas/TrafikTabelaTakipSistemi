@@ -31,6 +31,15 @@ const signs = <String, ({String text, String short, int priority})>{
   'nostopping': (text: 'Duraklamak ve park etmek yasak', short: 'Park yasak', priority: 3),
   'priorityroad': (text: 'Ana yol', short: 'Ana yol', priority: 3),
   'pedestrian_info': (text: 'Yaya geçidi', short: 'Yaya geçidi', priority: 3),
+  // v7 (29 Ekim gecesi): "trafik levhaları" setinden gelen, yeterli örneği olan 8 Türk levhası daha; hepsi sesli.
+  'kasis': (text: 'Kasis', short: 'Kasis', priority: 2),
+  'durak': (text: 'Durak', short: 'Durak', priority: 3),
+  'demiryolu': (text: 'Demiryolu geçidi', short: 'Demiryolu', priority: 1),
+  'refuj_basi': (text: 'Refüj başı', short: 'Refüj', priority: 3),
+  'donus_adasi': (text: 'Dönüş adası', short: 'Dönüş adası', priority: 3),
+  'ileri_saga': (text: 'İleri ve sağa mecburi', short: 'İleri sağa', priority: 2),
+  'ileri_sola': (text: 'İleri ve sola mecburi', short: 'İleri sola', priority: 2),
+  'ada_etrafinda': (text: 'Ada etrafında dönünüz', short: 'Ada', priority: 2),
 };
 
 /// Modelin tanıdığı ama uyarısı olmayan levha (v6'daki 21. sınıf: 20 sınıfın dışındaki her trafik levhası).
@@ -38,8 +47,8 @@ const signs = <String, ({String text, String short, int priority})>{
 /// sınıfa zorlamasın diye eklendi (taş düşebilir → kavşak gibi yanlış uyarılar, 29 Ekim).
 const otherSign = 'diger_levha';
 
-/// Ekran şeridindeki ad: kataloğun kısa biçimi, diğer levha için "Diğer levha".
-String label(String name) => name == otherSign ? 'Diğer levha' : (signs[name]?.short ?? name);
+/// Ekran şeridindeki ad: kataloğun kısa biçimi, diğer levha için "Bilinmeyen levha".
+String label(String name) => name == otherSign ? 'Bilinmeyen levha' : (signs[name]?.short ?? name);
 
 /// Zayıf sınıfların taban eşikleri (Hafta 2 hata analizi: hız levhaları birbirine,
 /// pedestrian_info başka mavi levhalara karışıyor).

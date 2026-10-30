@@ -90,6 +90,10 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 |---|---|---|
 | v5b (DFG'li) | 32 (26) / 18 | 27 (23) / 6 |
 | **v6** (DFG yok, + trafik levhaları seti, 21 sınıf) | 32 (26) / **14** | 28 (23) / **9** |
+| v7 (v6 + 8 yeni sesli sınıf: kasis, durak, demiryolu…; 29 sınıf, 112 epoch) | 29 (23) / 20 | 25 (19) / 10 |
+
+v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
+tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
 
 Yakalama aynı; 30 FPS'te yanlış uyarı azaldı, ~10 FPS'te arttı. "Diğer levha" sınıfı yalnızca Bilecik (14) ve Ankara (1)
 videolarında tespit verdi; öteki 8 videoda ve bizim eğitim görsellerinde hiç. Ayrıntı ve karar: `docs/YOL_HARITASI.md`

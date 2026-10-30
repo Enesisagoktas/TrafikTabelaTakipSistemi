@@ -82,6 +82,11 @@ yolo train model=runs/detect/v5b/weights/best.pt data=data/levha640/data_v6.yaml
 yolo train model=runs/detect/v6/weights/last.pt data=data/levha640/data_v6.yaml imgsz=640 batch=16 workers=4 optimizer=AdamW lr0=0.0002 warmup_epochs=0 warmup_bias_lr=0 epochs=29 patience=15 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v6_devam
 # Temiz test (test etiketleri 20 sınıflı; diger_levha satırı boş): yolo val model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v6.yaml split=test
 # Sözde etiket (bizim görsellerde modelin bulduğu diger_levha kutuları): python scripts\sozde_etiket.py runs/detect/v6_devam/weights/best.pt 0.5
+
+# v7 (30 Ekim gecesi, uygulamaya alınmadı): 8 yeni sesli sınıf; eşleme esleme_trafik_levhalari_v7.json, data_v7.yaml (29 sınıf)
+python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari scripts\esleme_trafik_levhalari_v7.json --ek-siniflar kasis,durak,demiryolu,refuj_basi,donus_adasi,ileri_saga,ileri_sola,ada_etrafinda --diger
+yolo train model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v7.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=150 patience=40 cos_lr=True close_mosaic=15 fliplr=0 mixup=0 cache=False name=v7
+# Not: ek\trafik_levhalari şu an v7 etiketleriyle (29 sınıf). v6 verisini yeniden üretmek için v6 eşlemesiyle --diger komutunu tekrar çalıştır.
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

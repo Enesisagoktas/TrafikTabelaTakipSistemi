@@ -131,7 +131,7 @@ def selftest():
     # aynı öncelik ve aynı an: kuyruk ada göre sıralar, önce yol ver çalar
     assert [r.step([("stop", 0.9, 0.1), ("giveway", 0.9, 0.1)], t)[1] for t in (0, 0.1, 0.2)][-1] == "giveway"
     assert r.brief  # yol ver çalarken dur bekliyor: kısa biçim
-    assert len(SIGNS) == 20 and all(1 <= p <= 3 for _, p in SIGNS.values()) and set(SHORT) == set(SIGNS)
+    assert len(SIGNS) == 28 and all(1 <= p <= 3 for _, p in SIGNS.values()) and set(SHORT) == set(SIGNS)
     print("öz-test geçti")
 
 
