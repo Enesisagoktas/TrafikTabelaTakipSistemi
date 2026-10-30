@@ -86,7 +86,15 @@ yolo train model=runs/detect/v6/weights/last.pt data=data/levha640/data_v6.yaml 
 # v7 (30 Ekim gecesi, uygulamaya alınmadı): 8 yeni sesli sınıf; eşleme esleme_trafik_levhalari_v7.json, data_v7.yaml (29 sınıf)
 python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari scripts\esleme_trafik_levhalari_v7.json --ek-siniflar kasis,durak,demiryolu,refuj_basi,donus_adasi,ileri_saga,ileri_sola,ada_etrafinda --diger
 yolo train model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v7.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=150 patience=40 cos_lr=True close_mosaic=15 fliplr=0 mixup=0 cache=False name=v7
-# Not: ek\trafik_levhalari şu an v7 etiketleriyle (29 sınıf). v6 verisini yeniden üretmek için v6 eşlemesiyle --diger komutunu tekrar çalıştır.
+# Not: ek\trafik_levhalari v8 için yeniden v6 eşlemesiyle üretildi (21 sınıf).
+
+# v8 (30 Ekim öğle, uygulamada): DFG'nin eşlenmeyen 174 sınıfı diger_levha olarak geri alındı (yalnız "bilinmeyen levha" için;
+# sesli 20 sınıf Türk verisinden). train_birlesik.txt 14.503 görsel (Hootbu 4.422 + negatif 415 + trafik_levhalari 2.933 + dfg 6.733).
+python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari scripts\esleme_trafik_levhalari.json --diger
+python scripts\ek_veri.py data\dis\dfg\stage dfg scripts\esleme_dfg.json --atla "III-29-30,III-29-40,III-30-30" --diger   # -> ek\dfg: 6.733 görsel, 13.572 diger_levha kutusu
+yolo train model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v6.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0003 warmup_epochs=1 warmup_bias_lr=0 epochs=40 patience=15 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v8
+# 31 epoch (erken durdu; epoch ~2,5 dk), en iyi 16. epoch val 0,886/0,725; temiz test .pt 0,887/0,716; 10 video: 30 FPS 32 (28) / 14, ~10 FPS 27 (23) / 10.
+# Zincir betiği dersi: PowerShell 5.1 BOM'suz .ps1'i ANSI okur -> betikteki 'ş' regex'i eşleşmedi; betiklerde ASCII kullan.
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

@@ -89,11 +89,21 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 | Model | 30 FPS: yakalanan (zamanında) / yanlış uyarı | ~10 FPS |
 |---|---|---|
 | v5b (DFG'li) | 32 (26) / 18 | 27 (23) / 6 |
-| **v6** (DFG yok, + trafik levhaları seti, 21 sınıf) | 32 (26) / **14** | 28 (23) / **9** |
+| v6 (DFG yok, + trafik levhaları seti, 21 sınıf) | 32 (26) / **14** | 28 (23) / **9** |
 | v7 (v6 + 8 yeni sesli sınıf: kasis, durak, demiryolu…; 29 sınıf, 112 epoch) | 29 (23) / 20 | 25 (19) / 10 |
+| **v8** (v6 + DFG'nin öteki levhaları "bilinmeyen levha" olarak; 21 sınıf, 31 epoch) | 32 (**28**) / **14** | 27 (23) / 10 |
 
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
+
+**v8 (30 Ekim öğle, uygulamada):** DFG'nin 20 sınıfımıza eşlenmeyen 174 sınıfı (13.572 kutu) `diger_levha` olarak geri
+alındı; sesli 20 sınıf yine Türk verisinden. Uyarı sayıları v6 ile aynı (30 FPS'te 2 uyarı daha zamanında; ~10 FPS'te
+1 yakalama eksik, 1 yanlış fazla — tek olay, gürültü sınırında). Asıl kazanç "bilinmeyen levha": v6'da 10 videoda
+toplam 15 tespit verirken v8'de 9 videoda 1.122 kare. İnceleyicilerin "sınıf dışı levha" yazdığı 356 saniyenin
+222'sinde (%62) bilinmeyen tespiti var; bilinmeyen tespiti olan 133 saniyenin 129'u (%97) böyle bir nota denk geliyor.
+Yani ekranda "Bilinmeyen levha" şeridi artık gerçekten çalışıyor. Temiz test .pt 0,887 / 0,716, FP16 tflite 0,888 / 0,721
+(v6 ile aynı).
+DFG CC BY-NC-SA olduğu için ticari olmayan kullanım notu README'ye ve uygulamaya geri geldi.
 
 **Sarı zemin kuralı (30 Ekim sabahı, v6):** tespit kutusundaki sarı piksel oranı loga eklendi (`sari` sütunu) ve
 "oran ≥ eşik ise yok say" kuralı tarandı. 30 FPS'te yanlış uyarı 14 → 13 (eşik 0,3/0,4), 0,2'de yakalama 32 → 30.
