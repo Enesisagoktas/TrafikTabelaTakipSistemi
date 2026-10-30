@@ -95,6 +95,17 @@ python scripts\ek_veri.py data\dis\dfg\stage dfg scripts\esleme_dfg.json --atla 
 yolo train model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v6.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0003 warmup_epochs=1 warmup_bias_lr=0 epochs=40 patience=15 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v8
 # 31 epoch (erken durdu; epoch ~2,5 dk), en iyi 16. epoch val 0,886/0,725; temiz test .pt 0,887/0,716; 10 video: 30 FPS 32 (28) / 14, ~10 FPS 27 (23) / 10.
 # Zincir betiği dersi: PowerShell 5.1 BOM'suz .ps1'i ANSI okur -> betikteki 'ş' regex'i eşleşmedi; betiklerde ASCII kullan.
+
+# v9 (30 Ekim öğleden sonra): 16 yeni sesli sınıf (20 temel + 16 + diger_levha = 37). Yeni sınıflar Türkiye'de aynı tasarımı
+# olan levhalar; örnekler DFG (çok yol/hava) + Erzurum seti. Eşlemeler: esleme_dfg_v9.json, esleme_trafik_levhalari_v9.json.
+# Erzurum'a özgü refüj başı / dönüş adası / ileri-sağa / ileri-sola yine diger_levha (tek kaynak, v7'de genellemedi).
+set EK=kasis,durak,demiryolu,ada_etrafinda,isikli_isaret,keskin_viraj,devamli_viraj,sollama_yasak,dusen_kaya,hayvan,daralan_yol,dik_egim,speed40,speed60,hiz_sonu,yol_calismasi
+python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari scripts\esleme_trafik_levhalari_v9.json --diger --ek-siniflar %EK% --yaml data_v9.yaml
+python scripts\ek_veri.py data\dis\dfg\stage dfg scripts\esleme_dfg_v9.json --atla "III-29-30,III-29-40,III-30-30" --diger --ek-siniflar %EK% --yaml data_v9.yaml
+python scripts\sozde_etiket.py runs/detect/v8/weights/best.pt 0.5 data_v9.yaml   # Hootbu + negatif görsellerde v8'in bulduğu bilinmeyen levhalar (33 görsel, 43 kutu)
+yolo train model=runs/detect/v8/weights/best.pt data=data/levha640/data_v9.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=60 patience=20 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v9
+# Video değerlendirmesinde yeni sınıf uyarıları, ±3 sn içindeki inceleyici notu tutuyorsa "yeni sınıf doğru" sayılır (video_degerlendir.py NEW_NOTE).
+# Sesler: mobile\tool\sesleri_uret.ps1 (80 wav). Katalog 40 sesli sınıf; refüj/dönüş adası/ileri-sağa/sola sesleri modelde yok, zararsız.
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

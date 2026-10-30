@@ -32,8 +32,9 @@ def iou(a, b):
 
 def main(weights, thr=0.5, data_yaml="data_v6.yaml"):
     global OTHER
-    OTHER = yaml.safe_load((DATA / data_yaml).read_text(encoding="utf-8"))["names"].index("diger_levha")
+    OTHER = yaml.safe_load((DATA / data_yaml).read_text(encoding="utf-8"))["names"].index("diger_levha")  # etikete yazılan
     model = YOLO(weights)
+    model_other = next(k for k, v in model.names.items() if v == "diger_levha")  # modelin kendi indeksi (v8: 20)
     added, images, sample = 0, 0, []
     for folder in FOLDERS:
         lbl, orig = folder / "labels", folder / "labels_orig"
@@ -45,7 +46,7 @@ def main(weights, thr=0.5, data_yaml="data_v6.yaml"):
             boxes = [tuple(map(float, r[1:])) for r in rows]
             r = model.predict(p, imgsz=640, conf=thr, verbose=False, device=0)[0]
             new = [tuple(map(float, b)) for c, b in zip(r.boxes.cls.tolist(), r.boxes.xywhn.tolist())
-                   if int(c) == OTHER and all(iou(tuple(map(float, b)), o) < 0.3 for o in boxes)]
+                   if int(c) == model_other and all(iou(tuple(map(float, b)), o) < 0.3 for o in boxes)]
             if new:
                 images += 1
                 added += len(new)
