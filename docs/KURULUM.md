@@ -118,6 +118,11 @@ python scripts\yeni_kare_denetim.py tara runs/detect/v9/weights/best.pt data\dis
 # pafta_<sinif>_<n>.jpg'lere bak, ret.txt yaz (sinif:no | sinif:* | sinif:no=yeni_sinif), sonra:
 python scripts\yeni_kare_denetim.py uygula amasra
 python scripts\yeni_kare_denetim.py uygula pexels_ek
+python scripts\ek_veri.py data\dis\amasra_sozde amasra scripts\esleme_kimlik_v10.json --diger --ek-siniflar %EK% --yaml data_v10.yaml
+python scripts\ek_veri.py data\dis\pexels_ek_sozde pexels_ek scripts\esleme_kimlik_v10.json --diger --ek-siniflar %EK% --yaml data_v10.yaml
+yolo train model=runs/detect/v9/weights/best.pt data=data/levha640/data_v10.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0003 warmup_epochs=1 warmup_bias_lr=0 epochs=35 patience=12 close_mosaic=8 fliplr=0 mixup=0 cache=False name=v10
+# Sonuç: 15 epoch (erken durdu, en iyi 3.), val 0,887/0,722; temiz test .pt 0,878/0,708; 10 video: 30 FPS 31 (25) / 21 (+8 yeni sınıf doğru), ~10 FPS 27 (24) / 10.
+# Kapı tutmadı -> uygulama v8'de kaldı. Ayrıntı docs/video_testi.md.
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

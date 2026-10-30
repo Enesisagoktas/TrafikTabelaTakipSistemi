@@ -93,6 +93,7 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 | v7 (v6 + 8 yeni sesli sınıf: kasis, durak, demiryolu…; 29 sınıf, 112 epoch) | 29 (23) / 20 | 25 (19) / 10 |
 | **v8** (v6 + DFG'nin öteki levhaları "bilinmeyen levha" olarak; 21 sınıf, 31 epoch) | 32 (**28**) / **14** | 27 (23) / 10 |
 | v9 (v8 + 17 yeni sesli sınıf DFG + Erzurum'dan; 38 sınıf, 47 epoch) | 31 (27) / 19 (+4 yeni sınıf doğru) | 26 (23) / 10 |
+| v10 (v9 + 116 gözle denetlenmiş Türk karesi; 38 sınıf, 15 epoch) | 31 (25) / 21 (+8 yeni sınıf doğru) | 27 (24) / 10 |
 
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
@@ -118,6 +119,15 @@ tehlikeli viraj" (Zonguldak 1,6 sn), 4,80 m yükseklik levhasına "yaya geçidi"
 S-viraj için hâlâ temel sınıfları seçiyor (DFG'de bu sınıfların örneği az: yol çalışması 40, düşen kaya 119 kutu; Türk
 örneği hiç yok). Kapı (≥ 31 yakalama, ≤ 14 yanlış uyarı) tutmadı; uygulama v8'de. Ağırlıklar `ml/runs/detect/v9`.
 Sonraki adım aynı 38 sınıfla Türk yol karelerinden (Amasra–Sinop, Pexels) sözde etiket + gözle denetim → v10.
+
+**v10 (30 Ekim gece, uygulamaya alınmadı):** v9'un üstüne Amasra–Sinop motosiklet videosu (Wikimedia Commons, fatih
+kaplan, CC BY 3.0) ve 2 Pexels klibinden `yeni_kare_denetim.py` ile sözde etiketlenip paftadan gözle ayıklanan 116 görsel
+(149 kutu: 16 şevron, 3 sollama yasak, 3 kaygan yol, 2 düşen kaya, 2 devamlı viraj, 88 ikaz direği/tabela "bilinmeyen").
+v9'dan ince ayar (lr 0,0003), 15 epoch'ta erken durdu, en iyi 3. epoch (val 0,887 / 0,722); temiz test 0,878 / 0,708.
+Videoda 30 FPS'te 31 (25) / 21, yeni sınıf doğru 8 (hepsi keskin viraj); ~10 FPS'te 27 (24) / 10 (v8 ile aynı).
+30 FPS'teki yanlış uyarılar yine aynı nesneler: uzak/okunmaz levhalar, sarı yol çalışması levhaları, şevron/ikaz
+direkleri ve sınıf dışı levhalar (kasis üçgeni → speed30, 4,80 m → yaya, S-viraj → kavşak). Kapı tutmadı; uygulama v8'de.
+Ağırlıklar `ml/runs/detect/v10`.
 
 **Sarı zemin kuralı (30 Ekim sabahı, v6):** tespit kutusundaki sarı piksel oranı loga eklendi (`sari` sütunu) ve
 "oran ≥ eşik ise yok say" kuralı tarandı. 30 FPS'te yanlış uyarı 14 → 13 (eşik 0,3/0,4), 0,2'de yakalama 32 → 30.
