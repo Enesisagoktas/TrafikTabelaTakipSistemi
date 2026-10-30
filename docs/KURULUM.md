@@ -123,6 +123,13 @@ python scripts\ek_veri.py data\dis\pexels_ek_sozde pexels_ek scripts\esleme_kiml
 yolo train model=runs/detect/v9/weights/best.pt data=data/levha640/data_v10.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0003 warmup_epochs=1 warmup_bias_lr=0 epochs=35 patience=12 close_mosaic=8 fliplr=0 mixup=0 cache=False name=v10
 # Sonuç: 15 epoch (erken durdu, en iyi 3.), val 0,887/0,722; temiz test .pt 0,878/0,708; 10 video: 30 FPS 31 (25) / 21 (+8 yeni sınıf doğru), ~10 FPS 27 (24) / 10.
 # Kapı tutmadı -> uygulama v8'de kaldı. Ayrıntı docs/video_testi.md.
+
+# v11 (30 Ekim gece, ajan analizinden): val/test yeni sınıfları hiç görmüyordu, diger_levha kutuların %42'siydi.
+# liste_v11.py: yeni sınıf içeren DFG görsellerinin %10'u (198) val'e -> train_v11.txt (14.421), val_v11.txt (494), data_v11.yaml.
+python scripts\liste_v11.py
+# cls_pw=0.5: sınıf başına ters sıklık ağırlığı (karekök); sabır = epoch ki mozaik kapalı son 10 epoch atlanmasın (v9/v10'da atlanmıştı).
+yolo train model=runs/detect/v9/weights/best.pt data=data/levha640/data_v11.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0002 lrf=0.05 warmup_epochs=1 warmup_bias_lr=0 cls_pw=0.5 epochs=30 patience=30 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v11
+# analiz.py kurallar artık "5 sınıfta güven >= 0,8" tabanını da ölçer (GATE30T5 satırı); kural ve çekinceler docs/video_testi.md.
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

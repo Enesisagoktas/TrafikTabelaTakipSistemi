@@ -134,6 +134,33 @@ Ağırlıklar `ml/runs/detect/v10`.
 İşe yaramadı: yol çalışması bölgesinde gerçek geçici hız levhaları da sarı zeminli (Ankara 140–290 sn; doğru hız 50
 uyarılarının sarı oranı 0,3–0,5). Kural kapalı, ölçüm sütunu duruyor.
 
+**Ajan analizi (30 Ekim gece, v8/v9/v10 logları; 3 analiz + 5 bağımsız doğrulama ajanı):**
+- *Yanlış uyarıların nedeni:* v9'un 19 ve v10'un 21 yanlış uyarısından 13 / 12'si v8'in de uyardığı yerler. Fazlası
+  yeni nesne değil, 5–8 % boydaki **gerçek Türk levhalarının kendinden emin yanlış okunması**: 50 → 30 (v9 ×3, v10 ×4;
+  v8 ×1), 70 → U dönüşü yasak (v10), kavşak üçgeni → yaya (v9, v10) ve yeni sınıf nesnelerinin (S-viraj 7, düşen kaya 5,
+  sollama yasak 3, sarı zeminli yol çalışması 5, hayvan 3 uyarı) temel sınıf olarak ses vermesi. Şevron/ikaz direği hiç
+  uyarı üretmemiş: inceleyici notlarındaki "chevron" suçlamalarının hepsinde asıl kutu yanındaki üçgen/daire levha.
+  Temiz testte speed30 mAP50 0,764 → 0,725 → 0,705: v9 yalnızca DFG'den speed40/60 ve hız sonu ekledi, Türk hız örneği
+  aynı kaldı. Ankara 133 sn ve sürücü koltuğu 12 sn "yanlış" uyarıları aslında gerçek levha (sahne kesmesi; 1 kare/sn
+  gerçek durum kaçırmış).
+- *Eğitim:* val_temiz / test_temiz yalnızca 20 temel sınıfı içeriyor → v9/v10'da best.pt seçimi ve erken durma 17 yeni
+  sınıfı **hiç ölçmedi**. Eğitim kutularının %42'si diger_levha (12.489), 20 temel sınıf %45, 17 yeni sınıf %12 ve
+  12'si ≥ %94 DFG. Ultralytics 8.4'ün `cls_pw` sınıf ağırlığı hiç kullanılmamıştı. v10, v9'un bitirdiği lr'nin 3 katıyla
+  ve ısınma/mozaikle yeniden başlayıp 1. epoch'tan itibaren v9'un altında kaldı. Sıfırdan eğitim için kanıt yok (v1 bile
+  ~0,885 tavanına veriyle takılmış).
+- *Kural taraması (258 satır):* yanlış uyarı üreten sınıflara **0,8 güven tabanı** (speed30, crossroads, dangerousright,
+  pedestrian_risk, schoolpassing; caution/dangerousleft/pedestrian_info tabanı hiçbir yanlış uyarıyı silmediği için
+  dışarıda) 30 FPS'te v8 32 (28) / **11**, v9 32 (27) / **11** (+4 yeni sınıf doğru), v10 32 (25) / 19; ~10 FPS'te
+  v8 27 (23) / 10, v9 26 (23) / **7**, v10 26 (23) / 10. Hiçbir yakalama kaybolmuyor (bu videolardaki tabanlı sınıf
+  olaylarının hepsinde en yüksek güven ≥ 0,886). Doğrulayıcıların çekinceleri: kural aynı 10 videoda ayarlandı; v8'e de
+  aynı ölçüde yarıyor (yani v9 kapıyı **model üstünlüğüyle değil kural değişikliğiyle** geçiyor); 31 → 32 yakalama
+  Ankara 291 sn'de yanlış okul uyarısının ses kuyruğunu boşaltmasından; 0,7–0,8 arası gerçek levhaların kaybı bu videolarla
+  ölçülemiyor. Güven 0,85 tabanı ~10 FPS'te 2 gerçek sağa viraj levhasını kaybettiği, 4'te 4 oylama bütün modellerde
+  ~10 FPS yakalamayı 26 → 21'e düşürdüğü, genel eşik 0,75 yeni sınıf doğru sayısını 4 → 1'e indirdiği için elendi.
+- *Veri önerileri:* Türk S-viraj, sollama yasak, düşen kaya, sarı zeminli yol çalışması, hayvan ve iki yönlü trafik
+  örnekleri; küçük (< 60 px) Türk 30/50/70 kırpıntıları; EDS kamerası / KGM amblemi / mavi yer adı tabelası gibi
+  levha olmayan karıştırıcılar diger_levha olarak.
+
 Yakalama aynı; 30 FPS'te yanlış uyarı azaldı, ~10 FPS'te arttı. "Diğer levha" sınıfı yalnızca Bilecik (14) ve Ankara (1)
 videolarında tespit verdi; öteki 8 videoda ve bizim eğitim görsellerinde hiç. Ayrıntı ve karar: `docs/YOL_HARITASI.md`
 (v6 bölümü). Komutlar: `docs/KURULUM.md`.
