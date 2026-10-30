@@ -14,12 +14,13 @@ import shutil
 import sys
 from pathlib import Path
 
+import yaml
 from PIL import Image
 from ultralytics import YOLO
 
 DATA = Path(__file__).resolve().parents[1] / "data" / "levha640"
 FOLDERS = [DATA / "train", DATA / "ek" / "negatif"]
-OTHER = 20  # diger_levha indeksi (data_v6.yaml)
+OTHER = 20  # diger_levha indeksi; main() verilen yaml'dan okur (data_v6: 20, data_v9: 36)
 
 
 def iou(a, b):
@@ -29,7 +30,9 @@ def iou(a, b):
     return w * h / (a[2] * a[3] + b[2] * b[3] - w * h + 1e-9)
 
 
-def main(weights, thr=0.5):
+def main(weights, thr=0.5, data_yaml="data_v6.yaml"):
+    global OTHER
+    OTHER = yaml.safe_load((DATA / data_yaml).read_text(encoding="utf-8"))["names"].index("diger_levha")
     model = YOLO(weights)
     added, images, sample = 0, 0, []
     for folder in FOLDERS:
@@ -64,4 +67,4 @@ def main(weights, thr=0.5):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], float(sys.argv[2]) if len(sys.argv) > 2 else 0.5)
+    main(sys.argv[1], float(sys.argv[2]) if len(sys.argv) > 2 else 0.5, sys.argv[3] if len(sys.argv) > 3 else "data_v6.yaml")

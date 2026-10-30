@@ -29,6 +29,25 @@ TARGET = {
     "donotturnright", "nouturn", "nostopping", "priorityroad",
 }
 JUNCTION = re.compile(r"side.?road|junction|merge|staggered", re.I)
+# v9 (30 Ekim): 20 sınıfın dışındaki yeni sesli sınıflar gerçek durumda olay olarak yok (inceleyiciler yalnızca 20
+# sınıfı saydı), ama notlarında geçiyor. Böyle bir uyarı, ±3 sn içinde notu eşleşiyorsa "yeni sınıf doğru" sayılır.
+NEW_NOTE = {
+    "keskin_viraj": r"chevron", "dusen_kaya": r"rock", "sollama_yasak": r"overtak", "durak": r"bus stop|durak",
+    "kasis": r"bump|hump|kasis", "devamli_viraj": r"double bend|s-curve|s curve|bends", "hayvan": r"animal|deer|cattle|cow",
+    "daralan_yol": r"narrow", "dik_egim": r"slope|gradient|steep|descent|hill|%", "speed40": r"\b40\b", "speed60": r"\b60\b",
+    "hiz_sonu": r"end of|limit end|derestrict", "isikli_isaret": r"traffic light|signal", "yol_calismasi": r"roadwork|road work|construction|works",
+    "demiryolu": r"rail|train|level crossing", "ada_etrafinda": r"roundabout",
+}
+
+
+def credit_new(cells, extra):
+    """Eşleşmeyen uyarılardan yeni sınıfa ait olup notu tutanları ayırır -> (doğru sayılanlar, kalan yanlışlar)."""
+    ok, rest = [], []
+    for t, c in extra:
+        pat = NEW_NOTE.get(c)
+        near = " | ".join(n for s, cell in cells.items() if abs(s - t) <= 3 for cc, _, n in cell.get("notes", []) if cc not in TARGET)
+        (ok if pat and re.search(pat, near, re.I) else rest).append((t, c))
+    return ok, rest
 
 
 def load_gt():
@@ -111,6 +130,10 @@ if __name__ == "__main__":
             tot["yakalandi"] += 1
             tot["zamaninda"] += timely
             print(f"  YAKALADI  {e['cls']:15s} görünür {e['start']}-{e['end']} sn, uyarı {t:.1f} sn {'(zamanında)' if timely else '(GEÇ)'}")
+        ok_new, extra = credit_new(gt[video], extra)
+        for t, c in ok_new:
+            tot["yeni_ok"] += 1
+            print(f"  YENİ OK   {c:15s} uyarı {t:.1f} sn (inceleyici notu tutuyor)")
         for t, c in extra:
             why = explain(gt[video], t, c)
             tot["yanlis_alarm"] += 1
@@ -118,4 +141,4 @@ if __name__ == "__main__":
             print(f"  FAZLA     {c:15s} uyarı {t:.1f} sn -> {why}")
     print(f"\nTOPLAM: {tot['olay']} gerçek levha | yakalanan {tot['yakalandi']} (zamanında {tot['zamaninda']}) | "
           f"kaçırılan {tot['kacirma']} | eşleşmeyen uyarı {tot['yanlis_alarm']} "
-          f"(bunların {tot['muhtemelen_gercek']}'i muhtemelen gerçek uzak levha)")
+          f"(bunların {tot['muhtemelen_gercek']}'i muhtemelen gerçek uzak levha) | yeni sınıf doğru {tot['yeni_ok']}")

@@ -40,6 +40,19 @@ const signs = <String, ({String text, String short, int priority})>{
   'ileri_saga': (text: 'İleri ve sağa mecburi', short: 'İleri sağa', priority: 2),
   'ileri_sola': (text: 'İleri ve sola mecburi', short: 'İleri sola', priority: 2),
   'ada_etrafinda': (text: 'Ada etrafında dönünüz', short: 'Ada', priority: 2),
+  // v9 (30 Ekim): Türkiye'de aynı tasarımı olan, DFG'de (çok yol, çok hava) yeterli örneği bulunan 12 levha daha.
+  'isikli_isaret': (text: 'Işıklı işaret cihazı', short: 'Işıklı işaret', priority: 2),
+  'keskin_viraj': (text: 'Keskin viraj', short: 'Keskin viraj', priority: 2),
+  'devamli_viraj': (text: 'Tehlikeli devamlı virajlar', short: 'Devamlı viraj', priority: 2),
+  'sollama_yasak': (text: 'Öndeki taşıtı geçmek yasak', short: 'Sollama yasak', priority: 2),
+  'dusen_kaya': (text: 'Dikkat, düşen kaya', short: 'Düşen kaya', priority: 2),
+  'hayvan': (text: 'Dikkat, hayvan geçebilir', short: 'Hayvan', priority: 2),
+  'daralan_yol': (text: 'Daralan yol', short: 'Daralan yol', priority: 2),
+  'dik_egim': (text: 'Tehlikeli eğim', short: 'Eğim', priority: 2),
+  'speed40': (text: 'Hız sınırı kırk', short: 'Kırk', priority: 2),
+  'speed60': (text: 'Hız sınırı altmış', short: 'Altmış', priority: 2),
+  'hiz_sonu': (text: 'Hız sınırı sonu', short: 'Hız sonu', priority: 3),
+  'yol_calismasi': (text: 'Dikkat, yolda çalışma', short: 'Yol çalışması', priority: 2),
 };
 
 /// Modelin tanıdığı ama uyarısı olmayan levha (v6'daki 21. sınıf: 20 sınıfın dışındaki her trafik levhası).
@@ -52,7 +65,7 @@ String label(String name) => name == otherSign ? 'Bilinmeyen levha' : (signs[nam
 
 /// Zayıf sınıfların taban eşikleri (Hafta 2 hata analizi: hız levhaları birbirine,
 /// pedestrian_info başka mavi levhalara karışıyor).
-const _weakFloor = {'speed30': 0.65, 'speed50': 0.65, 'speed70': 0.65, 'pedestrian_info': 0.7};
+const _weakFloor = {'speed30': 0.65, 'speed40': 0.65, 'speed50': 0.65, 'speed60': 0.65, 'speed70': 0.65, 'pedestrian_info': 0.7};
 
 /// Sınıfa özel eşikler: taban eşik ile genel eşikten büyük olanı.
 Map<String, double> classThresholds(double minConf) =>

@@ -17,7 +17,7 @@ import statistics as st
 import sys
 from pathlib import Path
 
-from video_degerlendir import VID, events, load_gt, match
+from video_degerlendir import VID, credit_new, events, load_gt, match
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "desktop"))
 from app import CLASS_MIN_CONF, Rules  # noqa: E402
@@ -96,7 +96,7 @@ def kurallar(tag):
     for step, label in ((1, "30 FPS (her kare)"), (3, "~10 FPS (her 3. kare)")):
         print(f"\n### {label}")
         for name, (keep, kw) in variants.items():
-            caught = timely = false = 0
+            caught = timely = false = newok = 0
             delay = []
             for v, fr in logs.items():
                 res, extra = match(events(gt[v]), replay(fr[::step], keep, **kw))
@@ -104,9 +104,13 @@ def kurallar(tag):
                     if t is not None:
                         caught, timely = caught + 1, timely + (t <= e["end"] + 0.5)
                         delay.append(t - e["start"])
+                ok_new, extra = credit_new(gt[v], extra)
+                newok += len(ok_new)
                 false += len(extra)
             print(f"{name:36s} yakalanan {caught:2d} (zamanında {timely:2d}) / yanlış uyarı {false:2d}; "
-                  f"levha net görününce medyan {st.median(delay):+.1f} sn sonra uyardı")
+                  f"levha net görününce medyan {st.median(delay):+.1f} sn sonra uyardı; yeni sınıf doğru {newok}")
+            if step == 1 and name.startswith("şimdiki:"):  # zincir betikleri için ASCII satır (PS 5.1 Türkçe regex'i okuyamıyor)
+                print(f"GATE30 caught={caught} timely={timely} false={false} newok={newok}")
 
 
 if __name__ == "__main__":
