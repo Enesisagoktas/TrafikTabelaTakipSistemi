@@ -32,15 +32,16 @@ def frames(log):
             t = float(r["zaman_sn"])
             if not out or out[-1][0] != t:
                 out.append((t, []))
-            if r["olay"] == "tespit":
-                out[-1][1].append((r["sinif"], float(r["guven"]), float(r["yukseklik"])))
+            if r["olay"] == "tespit":  # sari sütunu 30 Ekim'de eklendi; eski loglarda 0
+                out[-1][1].append((r["sinif"], float(r["guven"]), float(r["yukseklik"]), float(r.get("sari") or 0)))
     return out
 
 
-def replay(fr, keep=None, **kw):
+def replay(fr, keep=None, sari=1.1, **kw):
+    """sari: kutudaki sarı oranı bu eşiği geçen tespit yok sayılır (app.py SARI_ESIK); 1.1 = kural kapalı."""
     rules, out = Rules(class_min_conf=CLASS_MIN_CONF, **kw), []
     for t, d in fr:
-        _, n = rules.step([x for x in d if keep is None or keep(*x)], t)
+        _, n = rules.step([x[:3] for x in d if x[3] < sari and (keep is None or keep(*x[:3]))], t)
         if n:
             out.append((t, n))
     return out
@@ -48,7 +49,7 @@ def replay(fr, keep=None, **kw):
 
 def track(fr, t, c):
     """Uyarıdan geriye: aynı sınıfın 1 sn'den uzun ara vermeden görüldüğü kareler -> [(zaman, en yüksek güven, en büyük boy)]"""
-    seen = [(ft, max(p for n, p, _ in d if n == c), max(h for n, _, h in d if n == c)) for ft, d in fr if ft <= t and any(n == c for n, _, _ in d)]
+    seen = [(ft, max(x[1] for x in d if x[0] == c), max(x[2] for x in d if x[0] == c)) for ft, d in fr if ft <= t and any(x[0] == c for x in d)]
     out = []
     for x in reversed(seen):
         if out and out[-1][0] - x[0] > 1.0:
@@ -70,6 +71,8 @@ def uyarilar(video, tag, until, only_false):
             continue
         f07 = next(((ft, h) for ft, p, h in tr if p >= 0.7), None)
         f5 = next((ft for ft, p, h in tr if p >= 0.7 and h >= 0.05), None)
+        sari = max((s for ft, d in fr if abs(ft - t) < 0.5 for n, _, _, s in d if n == c), default=0)
+        print(f"         sarı oranı (uyarı anında en çok): {sari:.2f}")
         print(f"\n{t:6.1f} sn {c:15s} " + (f"DOĞRU (inceleyiciler {e['start']}-{e['end']}. sn net gördü)" if e else "YANLIŞ"))
         print(f"         ilk tespit {tr[0][0]:.1f} sn (güven {tr[0][1]:.2f}, boy %{tr[0][2] * 100:.1f}); güven >= 0,7: "
               f"{f07[0]:.1f} sn (boy %{f07[1] * 100:.1f}); boy %5'i geçti: {f5:.1f} sn; uyarı {t:.1f} sn")
@@ -85,6 +88,9 @@ def kurallar(tag):
         "kademeli: %5'te 0,7; %3'te 0,85": (lambda n, p, h: (h >= 0.05 and p >= 0.7) or (h >= 0.03 and p >= 0.85), dict(min_conf=0, min_height=0)),
         "kademeli: %5'te 0,7; %3'te 0,9": (lambda n, p, h: (h >= 0.05 and p >= 0.7) or (h >= 0.03 and p >= 0.9), dict(min_conf=0, min_height=0)),
         "kademeli: %5'te 0,7; %2,5'te 0,9": (lambda n, p, h: (h >= 0.05 and p >= 0.7) or (h >= 0.025 and p >= 0.9), dict(min_conf=0, min_height=0)),
+        "şimdiki + sarı zemin >= 0,2 yok say": (None, dict(min_conf=0.7, min_height=0.05, sari=0.2)),
+        "şimdiki + sarı zemin >= 0,3 yok say": (None, dict(min_conf=0.7, min_height=0.05, sari=0.3)),
+        "şimdiki + sarı zemin >= 0,4 yok say": (None, dict(min_conf=0.7, min_height=0.05, sari=0.4)),
     }
     gt = load_gt()
     logs = {v: frames(VID / f"{v}.{tag}.log.csv") for v in gt}

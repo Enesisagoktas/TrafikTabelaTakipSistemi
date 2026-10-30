@@ -95,6 +95,11 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
 
+**Sarı zemin kuralı (30 Ekim sabahı, v6):** tespit kutusundaki sarı piksel oranı loga eklendi (`sari` sütunu) ve
+"oran ≥ eşik ise yok say" kuralı tarandı. 30 FPS'te yanlış uyarı 14 → 13 (eşik 0,3/0,4), 0,2'de yakalama 32 → 30.
+İşe yaramadı: yol çalışması bölgesinde gerçek geçici hız levhaları da sarı zeminli (Ankara 140–290 sn; doğru hız 50
+uyarılarının sarı oranı 0,3–0,5). Kural kapalı, ölçüm sütunu duruyor.
+
 Yakalama aynı; 30 FPS'te yanlış uyarı azaldı, ~10 FPS'te arttı. "Diğer levha" sınıfı yalnızca Bilecik (14) ve Ankara (1)
 videolarında tespit verdi; öteki 8 videoda ve bizim eğitim görsellerinde hiç. Ayrıntı ve karar: `docs/YOL_HARITASI.md`
 (v6 bölümü). Komutlar: `docs/KURULUM.md`.

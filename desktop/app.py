@@ -27,6 +27,19 @@ SIGNS = {n: (text, int(p)) for n, text, _, p in _CATALOG}  # sınıf -> (cümle,
 SHORT = {n: short for n, _, short, _ in _CATALOG}  # kısa biçim: arkada başka uyarı beklerken (<sınıf>_kisa.wav)
 # Hız levhaları birbirine, pedestrian_info başka mavi levhalara karışıyor (YOL_HARITASI, Hafta 2 sonuçları).
 CLASS_MIN_CONF = {"speed30": 0.65, "speed50": 0.65, "speed70": 0.65, "pedestrian_info": 0.7}
+# Kutudaki sarı piksel oranı loga yazılır (sütun "sari"). Sarı zeminli geçici levhalar yanlış uyarının ana kaynağı diye
+# "sarı oranı yüksekse yok say" kuralı denendi (30 Ekim, analiz.py): işe yaramadı, çünkü yol çalışması bölgesindeki
+# gerçek geçici hız levhaları da sarı (Ankara 140–290 sn). Yanlış uyarı 14 -> 13, 0,2 eşiğinde yakalama düşüyor.
+
+
+def yellow_ratio(hsv, box):
+    """hsv: OpenCV HSV kare; box: x1,y1,x2,y2 piksel. Sarı = ton 18–35 (OpenCV 0–180), doygunluk ve parlaklık > 90."""
+    x1, y1, x2, y2 = (int(v) for v in box)
+    c = hsv[max(y1, 0):y2, max(x1, 0):x2]
+    if c.size == 0:
+        return 0.0
+    m = (c[..., 0] >= 18) & (c[..., 0] <= 35) & (c[..., 1] > 90) & (c[..., 2] > 90)
+    return float(m.mean())
 
 
 class DetectionFilter:
@@ -132,6 +145,10 @@ def selftest():
     assert [r.step([("stop", 0.9, 0.1), ("giveway", 0.9, 0.1)], t)[1] for t in (0, 0.1, 0.2)][-1] == "giveway"
     assert r.brief  # yol ver çalarken dur bekliyor: kısa biçim
     assert len(SIGNS) == 28 and all(1 <= p <= 3 for _, p in SIGNS.values()) and set(SHORT) == set(SIGNS)
+    import numpy as np
+    hsv = np.zeros((10, 10, 3), np.uint8)
+    hsv[:5] = (26, 200, 200)  # üst yarı sarı
+    assert abs(yellow_ratio(hsv, (0, 0, 10, 10)) - 0.5) < 1e-6 and yellow_ratio(hsv, (0, 5, 10, 10)) == 0.0
     print("öz-test geçti")
 
 
@@ -186,16 +203,18 @@ def main(source, model_path=None, quiet=False):
     video = isinstance(source, str)
     fps = cv2.VideoCapture(source).get(cv2.CAP_PROP_FPS) if video else 0
     log = open(Path(source).with_suffix(f".{Path(model_path).stem}.log.csv") if video else os.devnull, "w", encoding="utf-8")
-    log.write("zaman_sn;olay;sinif;guven;yukseklik\n")
+    log.write("zaman_sn;olay;sinif;guven;yukseklik;sari\n")
     # Pencereyle kare başına (29 Ekim, 1280 px video): CPU/ONNX ~40 ms (25 FPS; çıkarım ~27 ms), GPU ~16 ms (~63 FPS).
     # conf=0.25 ve sınıftan bağımsız NMS: telefondaki eklentinin (ultralytics_yolo) ayarlarıyla aynı.
     for i, r in enumerate(model.predict(source=source, stream=True, imgsz=640, conf=0.25, agnostic_nms=True, device=device, verbose=False)):
         now = i / fps if video else time.monotonic()
-        dets = [(r.names[int(k)], float(p), float(b[3])) for k, p, b in zip(r.boxes.cls, r.boxes.conf, r.boxes.xywhn)]
-        log.writelines(f"{now:.2f};tespit;{n};{p:.3f};{h:.4f}\n" for n, p, h in dets)
-        if not dets:
-            log.write(f"{now:.2f};kare;;;\n")
-        new, n = rules.step(dets, now)
+        hsv = cv2.cvtColor(r.orig_img, cv2.COLOR_BGR2HSV) if len(r.boxes) else None
+        raw = [(r.names[int(k)], float(p), float(b[3]), yellow_ratio(hsv, xy))
+               for k, p, b, xy in zip(r.boxes.cls, r.boxes.conf, r.boxes.xywhn, r.boxes.xyxy)]
+        log.writelines(f"{now:.2f};tespit;{n};{p:.3f};{h:.4f};{s:.2f}\n" for n, p, h, s in raw)
+        if not raw:
+            log.write(f"{now:.2f};kare;;;;\n")
+        new, n = rules.step([x[:3] for x in raw], now)
         log.writelines(f"{now:.2f};onay;{c};;\n" for c in new)  # 5 karenin 3'üne yeni giren
         if n:
             text = SHORT[n] if rules.brief else SIGNS[n][0]
