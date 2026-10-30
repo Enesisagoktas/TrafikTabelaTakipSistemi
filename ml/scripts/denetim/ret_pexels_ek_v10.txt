@@ -1,0 +1,5 @@
+caution:1=crossroads
+caution:2=crossroads
+speed30:1=crossroads
+priorityroad:1
+speed50:1=diger_levha

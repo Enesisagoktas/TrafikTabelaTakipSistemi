@@ -92,6 +92,7 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 | v6 (DFG yok, + trafik levhaları seti, 21 sınıf) | 32 (26) / **14** | 28 (23) / **9** |
 | v7 (v6 + 8 yeni sesli sınıf: kasis, durak, demiryolu…; 29 sınıf, 112 epoch) | 29 (23) / 20 | 25 (19) / 10 |
 | **v8** (v6 + DFG'nin öteki levhaları "bilinmeyen levha" olarak; 21 sınıf, 31 epoch) | 32 (**28**) / **14** | 27 (23) / 10 |
+| v9 (v8 + 17 yeni sesli sınıf DFG + Erzurum'dan; 38 sınıf, 47 epoch) | 31 (27) / 19 (+4 yeni sınıf doğru) | 26 (23) / 10 |
 
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
@@ -104,6 +105,19 @@ toplam 15 tespit verirken v8'de 9 videoda 1.122 kare. İnceleyicilerin "sınıf 
 Yani ekranda "Bilinmeyen levha" şeridi artık gerçekten çalışıyor. Temiz test .pt 0,887 / 0,716, FP16 tflite 0,888 / 0,721
 (v6 ile aynı).
 DFG CC BY-NC-SA olduğu için ticari olmayan kullanım notu README'ye ve uygulamaya geri geldi.
+
+**v9 (30 Ekim akşam, uygulamaya alınmadı):** v8 + 17 yeni sesli sınıf (kasis, durak, demiryolu, ada etrafında, ışıklı
+işaret, keskin viraj, devamlı viraj, sollama yasak, düşen kaya, hayvan, daralan yol, eğim, hız 40/60, hız sonu, yol
+çalışması, kaygan yol); örnekler DFG (çok yol/hava) + Erzurum seti; 38 sınıf, 14.503 görsel. v8'den 60 epoch planlandı,
+47'de erken durdu (en iyi 27.), val 0,889 / 0,728; temiz test .pt 0,884 / 0,719 (v8 ile aynı). Videoda 30 FPS'te
+31 (27) / 19, ~10 FPS'te 26 (23) / 10. Yeni sınıflardan 4 doğru uyarı çıktı (hepsi keskin viraj: İstanbul 1, sürücü
+koltuğu 3; inceleyici notlarıyla eşleşti), ~10 FPS'te 0. Ama 20 temel sınıfta yanlış uyarı 14 → 19: 3 yeni speed30
+(Ankara 208, 276, 282 sn: uzak üçgen, sarı yol çalışması karesi, küçük sarı yuvarlak), düşen kaya üçgenine "sağa
+tehlikeli viraj" (Zonguldak 1,6 sn), 4,80 m yükseklik levhasına "yaya geçidi" (minibüs 9,8 sn), iki yönlü trafik
+üçgenine "daralan yol" (Ankara 273 sn). Yani yeni sınıflar o levhaları devralmadı: model düşen kaya / yol çalışması /
+S-viraj için hâlâ temel sınıfları seçiyor (DFG'de bu sınıfların örneği az: yol çalışması 40, düşen kaya 119 kutu; Türk
+örneği hiç yok). Kapı (≥ 31 yakalama, ≤ 14 yanlış uyarı) tutmadı; uygulama v8'de. Ağırlıklar `ml/runs/detect/v9`.
+Sonraki adım aynı 38 sınıfla Türk yol karelerinden (Amasra–Sinop, Pexels) sözde etiket + gözle denetim → v10.
 
 **Sarı zemin kuralı (30 Ekim sabahı, v6):** tespit kutusundaki sarı piksel oranı loga eklendi (`sari` sütunu) ve
 "oran ≥ eşik ise yok say" kuralı tarandı. 30 FPS'te yanlış uyarı 14 → 13 (eşik 0,3/0,4), 0,2'de yakalama 32 → 30.

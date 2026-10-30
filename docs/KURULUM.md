@@ -106,7 +106,17 @@ python scripts\ek_veri.py data\dis\dfg\stage dfg scripts\esleme_dfg_v9.json --at
 python scripts\sozde_etiket.py runs/detect/v8/weights/best.pt 0.5 data_v9.yaml   # Hootbu + negatif görsellerde v8'in bulduğu bilinmeyen levhalar (33 görsel, 43 kutu)
 yolo train model=runs/detect/v8/weights/best.pt data=data/levha640/data_v9.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=60 patience=20 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v9
 # Video değerlendirmesinde yeni sınıf uyarıları, ±3 sn içindeki inceleyici notu tutuyorsa "yeni sınıf doğru" sayılır (video_degerlendir.py NEW_NOTE).
-# Sesler: mobile\tool\sesleri_uret.ps1 (80 wav). Katalog 40 sesli sınıf; refüj/dönüş adası/ileri-sağa/sola sesleri modelde yok, zararsız.
+# Sesler: mobile\tool\sesleri_uret.ps1 (82 wav). Katalog 41 sesli sınıf; refüj/dönüş adası/ileri-sağa/sola sesleri modelde yok, zararsız.
+# Sonuç: 47 epoch (erken durdu), en iyi 27. epoch val 0,889/0,728; temiz test .pt 0,884/0,719; 10 video: 30 FPS 31 (27) / 19 (+4 yeni sınıf doğru), ~10 FPS 26 (23) / 10.
+# Kapı (>= 31 yakalama, <= 14 yanlış uyarı) tutmadı -> uygulama v8'de kaldı. Ayrıntı docs/video_testi.md.
+
+# v10 hazırlığı (30 Ekim akşam): Türk yol karelerinden sözde etiket + gözle denetim (yeni_kare_denetim.py başlığındaki 3 adım).
+# Kareler: data\dis\amasra_sinop\kareler (Wikimedia Commons "Amasra Sinop arası", CC BY 3.0, 1 kare/sn) ve data\dis\pexels_ek\kareler (Pexels, 2 kare/sn).
+python scripts\yeni_kare_denetim.py tara runs/detect/v9/weights/best.pt data\dis\amasra_sinop\kareler amasra 0.35
+python scripts\yeni_kare_denetim.py tara runs/detect/v9/weights/best.pt data\dis\pexels_ek\kareler pexels_ek 0.35
+# pafta_<sinif>_<n>.jpg'lere bak, ret.txt yaz (sinif:no | sinif:* | sinif:no=yeni_sinif), sonra:
+python scripts\yeni_kare_denetim.py uygula amasra
+python scripts\yeni_kare_denetim.py uygula pexels_ek
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).
