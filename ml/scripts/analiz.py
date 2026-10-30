@@ -22,6 +22,9 @@ from video_degerlendir import VID, credit_new, events, load_gt, match
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "desktop"))
 from app import CLASS_MIN_CONF, Rules  # noqa: E402
 
+TABAN8 = {"speed30", "crossroads", "dangerousleft", "dangerousright", "pedestrian_info", "pedestrian_risk", "schoolpassing", "caution"}
+TABAN5 = {"speed30", "crossroads", "dangerousright", "pedestrian_risk", "schoolpassing"}
+
 
 def frames(log):
     out = []  # [(zaman, [(sınıf, güven, boy)])]
@@ -90,6 +93,10 @@ def kurallar(tag):
         "şimdiki + sarı zemin >= 0,2 yok say": (None, dict(min_conf=0.7, min_height=0.05, sari=0.2)),
         "şimdiki + sarı zemin >= 0,3 yok say": (None, dict(min_conf=0.7, min_height=0.05, sari=0.3)),
         "şimdiki + sarı zemin >= 0,4 yok say": (None, dict(min_conf=0.7, min_height=0.05, sari=0.4)),
+        # 30 Ekim gece: yanlış uyarı üreten sınıflara 0,8 güven tabanı (TABAN8: ajan taramasının 8 sınıfı; TABAN5: taramada
+        # gerçekten yanlış uyarı silen 5'i; caution/dangerousleft/pedestrian_info tabanı hiçbir yanlış uyarıyı silmedi).
+        "şimdiki + 8 sınıfta güven >= 0,8": (lambda n, p, h: h >= 0.05 and p >= (0.8 if n in TABAN8 else 0.7), dict(min_conf=0, min_height=0)),
+        "şimdiki + 5 sınıfta güven >= 0,8": (lambda n, p, h: h >= 0.05 and p >= (0.8 if n in TABAN5 else 0.7), dict(min_conf=0, min_height=0)),
     }
     gt = load_gt()
     logs = {v: frames(VID / f"{v}.{tag}.log.csv") for v in gt}
@@ -111,6 +118,8 @@ def kurallar(tag):
                   f"levha net görününce medyan {st.median(delay):+.1f} sn sonra uyardı; yeni sınıf doğru {newok}")
             if step == 1 and name.startswith("şimdiki:"):  # zincir betikleri için ASCII satır (PS 5.1 Türkçe regex'i okuyamıyor)
                 print(f"GATE30 caught={caught} timely={timely} false={false} newok={newok}")
+            if step == 1 and "5 sınıfta" in name:
+                print(f"GATE30T5 caught={caught} timely={timely} false={false} newok={newok}")
 
 
 if __name__ == "__main__":
