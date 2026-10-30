@@ -154,14 +154,14 @@ void main() {
     });
   });
 
-  test("katalogda modelin 40 sesli sınıfının hepsi var ve öncelikler 1-3", () {
+  test("katalogda modelin 41 sesli sınıfının hepsi var ve öncelikler 1-3", () {
     const modelNames = [
       'caution', 'crossroads', 'dangerousleft', 'dangerousright', 'donotturnleft', 'donotturnright', 'giveway',
       'keepleft', 'keepright', 'noentry', 'nostopping', 'nouturn', 'pedestrian_info', 'pedestrian_risk',
       'priorityroad', 'schoolpassing', 'speed30', 'speed50', 'speed70', 'stop',
       'kasis', 'durak', 'demiryolu', 'refuj_basi', 'donus_adasi', 'ileri_saga', 'ileri_sola', 'ada_etrafinda', // v7
       'isikli_isaret', 'keskin_viraj', 'devamli_viraj', 'sollama_yasak', 'dusen_kaya', 'hayvan', 'daralan_yol', // v9
-      'dik_egim', 'speed40', 'speed60', 'hiz_sonu', 'yol_calismasi',
+      'dik_egim', 'speed40', 'speed60', 'hiz_sonu', 'yol_calismasi', 'kaygan_yol',
     ];
     expect(signs.keys.toSet(), modelNames.toSet());
     expect(signs.values.every((s) => s.priority >= 1 && s.priority <= 3), isTrue);

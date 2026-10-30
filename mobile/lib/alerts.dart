@@ -53,6 +53,7 @@ const signs = <String, ({String text, String short, int priority})>{
   'speed60': (text: 'Hız sınırı altmış', short: 'Altmış', priority: 2),
   'hiz_sonu': (text: 'Hız sınırı sonu', short: 'Hız sonu', priority: 3),
   'yol_calismasi': (text: 'Dikkat, yolda çalışma', short: 'Yol çalışması', priority: 2),
+  'kaygan_yol': (text: 'Dikkat, kaygan yol', short: 'Kaygan yol', priority: 2),
 };
 
 /// Modelin tanıdığı ama uyarısı olmayan levha (v6'daki 21. sınıf: 20 sınıfın dışındaki her trafik levhası).

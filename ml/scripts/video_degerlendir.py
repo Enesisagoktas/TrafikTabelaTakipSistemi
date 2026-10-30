@@ -36,7 +36,7 @@ NEW_NOTE = {
     "kasis": r"bump|hump|kasis", "devamli_viraj": r"double bend|s-curve|s curve|bends", "hayvan": r"animal|deer|cattle|cow",
     "daralan_yol": r"narrow", "dik_egim": r"slope|gradient|steep|descent|hill|%", "speed40": r"\b40\b", "speed60": r"\b60\b",
     "hiz_sonu": r"end of|limit end|derestrict", "isikli_isaret": r"traffic light|signal", "yol_calismasi": r"roadwork|road work|construction|works",
-    "demiryolu": r"rail|train|level crossing", "ada_etrafinda": r"roundabout",
+    "demiryolu": r"rail|train|level crossing", "ada_etrafinda": r"roundabout", "kaygan_yol": r"slipper|skid",
 }
 
 
