@@ -111,7 +111,8 @@ yolo train model=runs/detect/v8/weights/best.pt data=data/levha640/data_v9.yaml 
 # Kapı (>= 31 yakalama, <= 14 yanlış uyarı) tutmadı -> uygulama v8'de kaldı. Ayrıntı docs/video_testi.md.
 
 # v10 hazırlığı (30 Ekim akşam): Türk yol karelerinden sözde etiket + gözle denetim (yeni_kare_denetim.py başlığındaki 3 adım).
-# Kareler: data\dis\amasra_sinop\kareler (Wikimedia Commons "Amasra Sinop arası", CC BY 3.0, 1 kare/sn) ve data\dis\pexels_ek\kareler (Pexels, 2 kare/sn).
+# Kareler: data\dis\amasra_sinop\kareler (Wikimedia Commons "Amasra Sinop arası", fatih kaplan, 2019, CC BY 3.0; motosiklet kamerası, 1 kare/sn)
+#          ve data\dis\pexels_ek\kareler (Pexels 34626400 / 34625837, Pexels lisansı, 2 kare/sn). Sonuç: 112 + 4 görsel, 144 + 5 kutu -> ek\amasra, ek\pexels_ek.
 python scripts\yeni_kare_denetim.py tara runs/detect/v9/weights/best.pt data\dis\amasra_sinop\kareler amasra 0.35
 python scripts\yeni_kare_denetim.py tara runs/detect/v9/weights/best.pt data\dis\pexels_ek\kareler pexels_ek 0.35
 # pafta_<sinif>_<n>.jpg'lere bak, ret.txt yaz (sinif:no | sinif:* | sinif:no=yeni_sinif), sonra:
