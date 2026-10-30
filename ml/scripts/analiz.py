@@ -72,8 +72,7 @@ def uyarilar(video, tag, until, only_false):
         f07 = next(((ft, h) for ft, p, h in tr if p >= 0.7), None)
         f5 = next((ft for ft, p, h in tr if p >= 0.7 and h >= 0.05), None)
         sari = max((s for ft, d in fr if abs(ft - t) < 0.5 for n, _, _, s in d if n == c), default=0)
-        print(f"         sarı oranı (uyarı anında en çok): {sari:.2f}")
-        print(f"\n{t:6.1f} sn {c:15s} " + (f"DOĞRU (inceleyiciler {e['start']}-{e['end']}. sn net gördü)" if e else "YANLIŞ"))
+        print(f"\n{t:6.1f} sn {c:15s} sarı {sari:.2f}  " + (f"DOĞRU (inceleyiciler {e['start']}-{e['end']}. sn net gördü)" if e else "YANLIŞ"))
         print(f"         ilk tespit {tr[0][0]:.1f} sn (güven {tr[0][1]:.2f}, boy %{tr[0][2] * 100:.1f}); güven >= 0,7: "
               f"{f07[0]:.1f} sn (boy %{f07[1] * 100:.1f}); boy %5'i geçti: {f5:.1f} sn; uyarı {t:.1f} sn")
         for x in sorted({f"{n}: {note[:80]}" if n == "other" else n for s in range(int(t) - 2, int(t) + 3) for n, _, note in gt.get(s, {}).get("notes", [])}):
