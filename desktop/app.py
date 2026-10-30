@@ -26,7 +26,7 @@ _CATALOG = re.findall(r"'(\w+)': \(text: '([^']+)', short: '([^']+)', priority: 
 SIGNS = {n: (text, int(p)) for n, text, _, p in _CATALOG}  # sınıf -> (cümle, öncelik); tek kaynak: alerts.dart
 SHORT = {n: short for n, _, short, _ in _CATALOG}  # kısa biçim: arkada başka uyarı beklerken (<sınıf>_kisa.wav)
 # Hız levhaları birbirine, pedestrian_info başka mavi levhalara karışıyor (YOL_HARITASI, Hafta 2 sonuçları).
-CLASS_MIN_CONF = {"speed30": 0.65, "speed40": 0.65, "speed50": 0.65, "speed60": 0.65, "speed70": 0.65, "pedestrian_info": 0.7}
+CLASS_MIN_CONF = {"speed30": 0.8, "crossroads": 0.8, "dangerousright": 0.8, "pedestrian_risk": 0.8, "schoolpassing": 0.8, "speed40": 0.65, "speed50": 0.65, "speed60": 0.65, "speed70": 0.65, "pedestrian_info": 0.7}
 # Kutudaki sarı piksel oranı loga yazılır (sütun "sari"). Sarı zeminli geçici levhalar yanlış uyarının ana kaynağı diye
 # "sarı oranı yüksekse yok say" kuralı denendi (30 Ekim, analiz.py): işe yaramadı, çünkü yol çalışması bölgesindeki
 # gerçek geçici hız levhaları da sarı (Ankara 140–290 sn). Yanlış uyarı 14 -> 13, 0,2 eşiğinde yakalama düşüyor.

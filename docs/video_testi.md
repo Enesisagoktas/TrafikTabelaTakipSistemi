@@ -94,6 +94,9 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 | **v8** (v6 + DFG'nin öteki levhaları "bilinmeyen levha" olarak; 21 sınıf, 31 epoch) | 32 (**28**) / **14** | 27 (23) / 10 |
 | v9 (v8 + 17 yeni sesli sınıf DFG + Erzurum'dan; 38 sınıf, 47 epoch) | 31 (27) / 19 (+4 yeni sınıf doğru) | 26 (23) / 10 |
 | v10 (v9 + 116 gözle denetlenmiş Türk karesi; 38 sınıf, 15 epoch) | 31 (25) / 21 (+8 yeni sınıf doğru) | 27 (24) / 10 |
+| v11 (v9'dan sınıf ağırlıklı devam, cls_pw 0,5, yeni sınıflı val; 38 sınıf, 30 epoch) | 31 (27) / 18 (+3 yeni sınıf doğru) | 27 (23) / 9 |
+| **v9 + 5 sınıfta 0,8 güven tabanı (uygulamada, 30 Ekim gece)** | 32 (27) / **11** (+4 yeni sınıf doğru) | 26 (23) / **7** |
+| v8 + aynı taban (karşılaştırma) | 32 (28) / 11 | 27 (23) / 10 |
 
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
@@ -128,6 +131,15 @@ Videoda 30 FPS'te 31 (25) / 21, yeni sınıf doğru 8 (hepsi keskin viraj); ~10 
 30 FPS'teki yanlış uyarılar yine aynı nesneler: uzak/okunmaz levhalar, sarı yol çalışması levhaları, şevron/ikaz
 direkleri ve sınıf dışı levhalar (kasis üçgeni → speed30, 4,80 m → yaya, S-viraj → kavşak). Kapı tutmadı; uygulama v8'de.
 Ağırlıklar `ml/runs/detect/v10`.
+
+**v11 (30 Ekim gece, uygulamaya alınmadı):** ajan analizinin eğitim önerileri: v9 best.pt'den sınıf ağırlıklı devam
+(`cls_pw` 0,5 = ters sıklığın karekökü), yeni sınıf içeren 198 DFG görseli val'e (`liste_v11.py`; val 494), sabır 30 =
+epoch (mozaiksiz son 10 epoch atlanmadı), lr0 0,0002. Val mAP50 30 epoch boyunca 0,839–0,850 arasında düz kaldı (en iyi
+1. epoch, 0,850 / 0,733); temiz test .pt 0,879 / 0,710. Yeni sınıflı val ilk kez hangi yeni sınıfların zayıf olduğunu
+gösterdi: keskin viraj 0,71, hayvan 0,62, yol çalışması 0,63 (duyarlılık 0,19), speed60 0,72 (az ve yalnız DFG örnekli);
+düşen kaya, demiryolu, sollama yasak, eğim ≥ 0,97. Videoda 30 FPS'te 31 (27) / 18, yeni sınıf doğru 3; 5 sınıf 0,8
+tabanıyla 31 (27) / 15; ~10 FPS'te 27 (23) / 9. Sınıf ağırlığı yanlış okumaları azaltmadı (düşen kayaya "dikkat", yol
+çalışmasına "kavşak" eklendi). Kapı tutmadı. Ağırlıklar `ml/runs/detect/v11`.
 
 **Sarı zemin kuralı (30 Ekim sabahı, v6):** tespit kutusundaki sarı piksel oranı loga eklendi (`sari` sütunu) ve
 "oran ≥ eşik ise yok say" kuralı tarandı. 30 FPS'te yanlış uyarı 14 → 13 (eşik 0,3/0,4), 0,2'de yakalama 32 → 30.
@@ -164,6 +176,17 @@ uyarılarının sarı oranı 0,3–0,5). Kural kapalı, ölçüm sütunu duruyor
 - *Veri önerileri:* Türk S-viraj, sollama yasak, düşen kaya, sarı zeminli yol çalışması, hayvan ve iki yönlü trafik
   örnekleri; küçük (< 60 px) Türk 30/50/70 kırpıntıları; EDS kamerası / KGM amblemi / mavi yer adı tabelası gibi
   levha olmayan karıştırıcılar diger_levha olarak.
+
+**Sevk kararı (30 Ekim gece): v9 + 5 sınıfta 0,8 güven tabanı uygulamada.** Üç eğitim (v9, v10, v11) kapıyı kendi
+başına geçemedi; 17 yeni sesli sınıf ancak kural taramasındaki tabanla alınabiliyor. Uygulanan kural: speed30, crossroads,
+dangerousright, pedestrian_risk, schoolpassing için güven ≥ 0,8, ötekiler 0,7 (`desktop/app.py` CLASS_MIN_CONF,
+`mobile/lib/alerts.dart` _weakFloor; taban = max(taban, genel eşik)). Aynı kuralla 30 FPS'te v8 32 (28) / 11, v9 32 (27)
+/ 11 + 4 yeni sınıf doğru; ~10 FPS'te v8 27 (23) / 10, v9 26 (23) / 7 (yeni kuralla `analiz.py kurallar` "şimdiki"
+satırı; tablodaki v8–v11 satırları eski kuralla). Temel 20 sınıfta v9, v8'e denk (30 FPS'te 1 uyarı geç, ~10 FPS'te 1
+eksik yakalama, 3 az yanlış uyarı) ve üstüne yeni sınıflar seslendiriliyor. Yukarıdaki çekinceler geçerli: kural aynı 10
+videoda ayarlandı ve v8'e de aynı ölçüde yarıyor; 0,7–0,8 arası gerçek levhalar tek karede daha çok kaçıyor (v9'da
+91'de 4). Temiz test .pt 0,884 / 0,719, FP16 tflite 0,889 / 0,715. Yeni sınıflardan keskin viraj dışındakiler
+videolarda hiç denenmedi; telefonda gerçek yol testi şart.
 
 Yakalama aynı; 30 FPS'te yanlış uyarı azaldı, ~10 FPS'te arttı. "Diğer levha" sınıfı yalnızca Bilecik (14) ve Ankara (1)
 videolarında tespit verdi; öteki 8 videoda ve bizim eğitim görsellerinde hiç. Ayrıntı ve karar: `docs/YOL_HARITASI.md`

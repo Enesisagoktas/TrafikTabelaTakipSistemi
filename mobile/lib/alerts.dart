@@ -66,7 +66,7 @@ String label(String name) => name == otherSign ? 'Bilinmeyen levha' : (signs[nam
 
 /// Zayıf sınıfların taban eşikleri (Hafta 2 hata analizi: hız levhaları birbirine,
 /// pedestrian_info başka mavi levhalara karışıyor).
-const _weakFloor = {'speed30': 0.65, 'speed40': 0.65, 'speed50': 0.65, 'speed60': 0.65, 'speed70': 0.65, 'pedestrian_info': 0.7};
+const _weakFloor = {'speed30': 0.8, 'crossroads': 0.8, 'dangerousright': 0.8, 'pedestrian_risk': 0.8, 'schoolpassing': 0.8, 'speed40': 0.65, 'speed50': 0.65, 'speed60': 0.65, 'speed70': 0.65, 'pedestrian_info': 0.7};
 
 /// Sınıfa özel eşikler: taban eşik ile genel eşikten büyük olanı.
 Map<String, double> classThresholds(double minConf) =>

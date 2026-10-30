@@ -88,7 +88,7 @@ python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari scripts\esl
 yolo train model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v7.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0004 warmup_epochs=1 warmup_bias_lr=0 epochs=150 patience=40 cos_lr=True close_mosaic=15 fliplr=0 mixup=0 cache=False name=v7
 # Not: ek\trafik_levhalari v8 için yeniden v6 eşlemesiyle üretildi (21 sınıf).
 
-# v8 (30 Ekim öğle, uygulamada): DFG'nin eşlenmeyen 174 sınıfı diger_levha olarak geri alındı (yalnız "bilinmeyen levha" için;
+# v8 (30 Ekim öğle, uygulamada 30 Ekim gecesine kadar): DFG'nin eşlenmeyen 174 sınıfı diger_levha olarak geri alındı (yalnız "bilinmeyen levha" için;
 # sesli 20 sınıf Türk verisinden). train_birlesik.txt 14.503 görsel (Hootbu 4.422 + negatif 415 + trafik_levhalari 2.933 + dfg 6.733).
 python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari scripts\esleme_trafik_levhalari.json --diger
 python scripts\ek_veri.py data\dis\dfg\stage dfg scripts\esleme_dfg.json --atla "III-29-30,III-29-40,III-30-30" --diger   # -> ek\dfg: 6.733 görsel, 13.572 diger_levha kutusu
@@ -96,7 +96,7 @@ yolo train model=runs/detect/v6_devam/weights/best.pt data=data/levha640/data_v6
 # 31 epoch (erken durdu; epoch ~2,5 dk), en iyi 16. epoch val 0,886/0,725; temiz test .pt 0,887/0,716; 10 video: 30 FPS 32 (28) / 14, ~10 FPS 27 (23) / 10.
 # Zincir betiği dersi: PowerShell 5.1 BOM'suz .ps1'i ANSI okur -> betikteki 'ş' regex'i eşleşmedi; betiklerde ASCII kullan.
 
-# v9 (30 Ekim öğleden sonra): 17 yeni sesli sınıf (20 temel + 17 + diger_levha = 38). Yeni sınıflar Türkiye'de aynı tasarımı
+# v9 (30 Ekim öğleden sonra; 30 Ekim gece 5 sınıf 0,8 tabanıyla uygulamaya alındı, v11'in altında): 17 yeni sesli sınıf (20 temel + 17 + diger_levha = 38). Yeni sınıflar Türkiye'de aynı tasarımı
 # olan levhalar; örnekler DFG (çok yol/hava) + Erzurum seti. Eşlemeler: esleme_dfg_v9.json, esleme_trafik_levhalari_v9.json.
 # DFG kodları paftalardan gözle + Slovenya yönetmeliğinden doğrulandı (I-11 kaygan yol, I-19 yolda çalışma; ilk eşlemede karışmıştı).
 # Erzurum'a özgü refüj başı / dönüş adası / ileri-sağa / ileri-sola yine diger_levha (tek kaynak, v7'de genellemedi).
@@ -130,6 +130,16 @@ python scripts\liste_v11.py
 # cls_pw=0.5: sınıf başına ters sıklık ağırlığı (karekök); sabır = epoch ki mozaik kapalı son 10 epoch atlanmasın (v9/v10'da atlanmıştı).
 yolo train model=runs/detect/v9/weights/best.pt data=data/levha640/data_v11.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0002 lrf=0.05 warmup_epochs=1 warmup_bias_lr=0 cls_pw=0.5 epochs=30 patience=30 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v11
 # analiz.py kurallar artık "5 sınıfta güven >= 0,8" tabanını da ölçer (GATE30T5 satırı); kural ve çekinceler docs/video_testi.md.
+# Sonuç: 30 epoch, val 30 epoch boyunca düz (0,839–0,850; en iyi 1. epoch 0,850/0,733); temiz test .pt 0,879/0,710;
+# 10 video: 30 FPS 31 (27) / 18 (+3 yeni sınıf doğru), 5 sınıf tabanıyla 31 (27) / 15; ~10 FPS 27 (23) / 9. Kapı tutmadı.
+# Yeni sınıflı val: yolo val model=runs/detect/v11/weights/best.pt data=data/levha640/data_v11.yaml split=val
+#   (keskin viraj 0,71, hayvan 0,62, yol çalışması 0,63, speed60 0,72; ötekiler >= 0,80).
+
+# Sevk (30 Ekim gece): v9 + 5 sınıfta 0,8 güven tabanı uygulamada (desktop\app.py CLASS_MIN_CONF, mobile\lib\alerts.dart _weakFloor;
+# aynı kuralla analiz.py kurallar "şimdiki": v9 30 FPS 32 (27) / 11 (+4 yeni sınıf doğru), ~10 FPS 26 (23) / 7; v8 32 (28) / 11, 27 (23) / 10).
+python scripts\export_tflite.py runs/detect/v9/weights/best.pt
+yolo val model=runs/detect/v9/weights/best_tflite/best_float16.tflite data=data/levha640/data_v11.yaml split=test imgsz=640   # FP16 tflite 0,889 / 0,715
+# -> mobile\assets\models\levha.tflite, desktop\levha.pt, desktop\levha.onnx; kModelName "v9 · 38 sınıf" (model_adi.py); APK: aşağıdaki mobil komutlar.
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

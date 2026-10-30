@@ -129,6 +129,7 @@ void main() {
     test('zayıf sınıflar genel eşikten düşük olamaz, genel eşik yüksekse onu alır', () {
       expect(classThresholds(0.5)['speed70'], 0.65);
       expect(classThresholds(0.5)['pedestrian_info'], 0.7);
+      expect(classThresholds(0.7)['speed30'], 0.8); // 5 sınıf 0,8 tabanı (video_testi: kural taraması)
       expect(classThresholds(0.8)['speed70'], 0.8);
       expect(classThresholds(0.5).containsKey('stop'), isFalse);
     });

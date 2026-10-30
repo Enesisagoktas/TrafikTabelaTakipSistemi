@@ -12,6 +12,6 @@
 | `desktop/` | Windows uygulaması (Python + ONNX Runtime + web kamerası) — ilk sürüm hazır |
 | `docs/` | Belgeler |
 
-Veri setleri (v8 modeli): [Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye), Hootbu, CC BY 4.0; [trafik levhaları](https://universe.roboflow.com/trafik-isaretleri-cpsyj/trafik-levhalari-gsqx4), "trafik isaretleri" çalışma alanı, CC BY 4.0; [DFG Traffic Sign Dataset](https://www.vicos.si/resources/dfg/), Tabernik & Skočaj, IEEE T-ITS 2019, CC BY-NC-SA 4.0 (yalnızca "bilinmeyen levha" sınıfı için; sesli sınıflar Türk verisinden). Model DFG ile eğitildiği için yalnızca ticari olmayan kullanım içindir.
+Veri setleri (v9 modeli): [Traffic-Sign-Recognition-V2-Turkiye](https://universe.roboflow.com/hootbu-vhtnl/traffic-sign-recognition-v2-turkiye), Hootbu, CC BY 4.0; [trafik levhaları](https://universe.roboflow.com/trafik-isaretleri-cpsyj/trafik-levhalari-gsqx4), "trafik isaretleri" çalışma alanı, CC BY 4.0; [DFG Traffic Sign Dataset](https://www.vicos.si/resources/dfg/), Tabernik & Skočaj, IEEE T-ITS 2019, CC BY-NC-SA 4.0 ("bilinmeyen levha" sınıfı ve 17 yeni sesli sınıfın örnekleri; 20 temel sesli sınıf Türk verisinden). Model DFG ile eğitildiği için yalnızca ticari olmayan kullanım içindir.
 
 > Deneysel bir prototiptir; sürücü güvenlik sistemi değildir.
