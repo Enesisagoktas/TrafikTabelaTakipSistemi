@@ -157,6 +157,10 @@ uyarılarının sarı oranı 0,3–0,5). Kural kapalı, ölçüm sütunu duruyor
   Ankara 291 sn'de yanlış okul uyarısının ses kuyruğunu boşaltmasından; 0,7–0,8 arası gerçek levhaların kaybı bu videolarla
   ölçülemiyor. Güven 0,85 tabanı ~10 FPS'te 2 gerçek sağa viraj levhasını kaybettiği, 4'te 4 oylama bütün modellerde
   ~10 FPS yakalamayı 26 → 21'e düşürdüğü, genel eşik 0,75 yeni sınıf doğru sayısını 4 → 1'e indirdiği için elendi.
+  *Tabanın tek kare maliyeti (temiz test, 5 sınıfın 91 kutusu, güven 0,7 → 0,8):* v8'de 6, v9'da 4 kutu daha kaçıyor
+  (yaya tehlikesi ve okul geçidi 2'şer, kavşak 1, speed30 1–2; kesinlik yaya tehlikesinde 0,94 → 1,00). Videoda hiç olay
+  kaybolmadı çünkü bir levha onlarca kare verir ve 5'te 3'ünün 0,8'i geçmesi yeter; yine de uzak/soluk levhalarda uyarı
+  biraz geç gelebilir.
 - *Veri önerileri:* Türk S-viraj, sollama yasak, düşen kaya, sarı zeminli yol çalışması, hayvan ve iki yönlü trafik
   örnekleri; küçük (< 60 px) Türk 30/50/70 kırpıntıları; EDS kamerası / KGM amblemi / mavi yer adı tabelası gibi
   levha olmayan karıştırıcılar diger_levha olarak.
