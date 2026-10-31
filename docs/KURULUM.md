@@ -140,6 +140,26 @@ yolo train model=runs/detect/v9/weights/best.pt data=data/levha640/data_v11.yaml
 python scripts\export_tflite.py runs/detect/v9/weights/best.pt
 yolo val model=runs/detect/v9/weights/best_tflite/best_float16.tflite data=data/levha640/data_v11.yaml split=test imgsz=640   # FP16 tflite 0,889 / 0,715
 # -> mobile\assets\models\levha.tflite, desktop\levha.pt, desktop\levha.onnx; kModelName "v9 · 38 sınıf" (model_adi.py); APK: aşağıdaki mobil komutlar.
+
+# v12 (31 Ekim gece): yeni Türk verisi + sentetik. Commons API'si tanıtıcı User-Agent (proje adresi) ve ~5 sn aralık ister; 429'da Retry-After beklenir,
+# tarayıcı taklidi yapılmaz. Büyük dosyalar (video) upload.wikimedia.org'da ~30 MB'da kopuyor; video_indir.py Range ile sürdürür ama çok yavaş kaldı.
+python -X utf8 scripts\commons_tara.py commons_levha_kat.json                          # Road signs in Turkey ağacı: kategori başına dosya sayısı
+python -X utf8 scripts\commons_indir.py commons_levha_kat.json data\dis\commons_levha  # fotoğraflar (SVG/çizim/sokak tabelası hariç) + atif.csv
+python -X utf8 scripts\commons_svg_indir.py data\dis\commons_svg                        # resmî çizimler 256 px PNG + liste.csv + pafta_svg_*.jpg
+python -X utf8 scripts\video_indir.py data\dis\yeni_videolar                            # Commons (lisans API'den) + Pexels klipleri, ffmpeg kare, atif.csv
+python scripts\test_benzerlik.py hazirla                                               # sonra: kontrol data\dis\yeni_videolar\kareler -> test videosuyla aynı çekim hariç
+set PAFTA_HUCRE=160                                                                    # ajan okuması için büyük pafta (8 x 6 hücre)
+python scripts\yeni_kare_denetim.py tara runs/detect/v9/weights/best.pt data\dis\yeni_videolar\kareler yeni_videolar 0.3
+python scripts\pafta_args.py yeni_videolar pafta.json   # -> Claude Code Workflow(scripts\ajan\pafta_denetim.js, args=pafta.json): her pafta 2 bağımsız ajan,
+python scripts\yeni_kare_denetim.py uygula yeni_videolar #    anlaşmazlıkta ret; dönen satırlar data\dis\yeni_videolar_sozde\ret.txt
+python scripts\ek_veri.py data\dis\yeni_videolar_sozde yeni_videolar scripts\esleme_kimlik_v10.json --diger --ek-siniflar %EK% --yaml data_v12.yaml
+# commons_levha için aynı dört adım (kareler_v12 = atıf satırı yazılmış fotoğraflar; dosya adları ASCII olmalı, cv2 Türkçe karakterli yolu okumuyor).
+# Çizim -> sınıf: Workflow(scripts\ajan\svg_esleme.js) iki okuyucu, yalnız anlaşma; sonuç scripts\esleme_svg_v12.json (136 çizim + 5 üretilen hız diski).
+python scripts\sinif_sayim.py train_v11.txt sinif_sayim.json                           # sınıf başına gerçek kutu (sentetik ağırlığı: 300 - gerçek)
+python scripts\sentetik.py scripts\esleme_svg_v12.json data\dis\commons_svg\png data\levha640\train\images,data\dis\arka_plan data\levha640\ek\sentetik 1500 12 sinif_sayim.json
+python scripts\liste_v12.py yeni_videolar commons_levha sentetik                       # train_v12.txt (15.859) + data_v12.yaml (val_v11)
+yolo train model=runs/detect/v8/weights/best.pt data=data/levha640/data_v12.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0003 lrf=0.05 warmup_epochs=1 warmup_bias_lr=0 epochs=60 patience=60 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v12
+# Zincirin tamamı (eğitim -> temiz test -> 10 video -> kapı >= 31 / <= 11 / >= 4 -> export, APK, commit): scripts\zincir_v12.ps1. Sonuç: bekleniyor (docs/video_testi.md).
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

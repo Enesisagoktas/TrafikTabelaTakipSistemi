@@ -97,6 +97,7 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 | v11 (v9'dan sınıf ağırlıklı devam, cls_pw 0,5, yeni sınıflı val; 38 sınıf, 30 epoch) | 31 (27) / 18 (+3 yeni sınıf doğru) | 27 (23) / 9 |
 | **v9 + 5 sınıfta 0,8 güven tabanı (uygulamada, 30 Ekim gece)** | 32 (27) / **11** (+4 yeni sınıf doğru) | 26 (23) / **7** |
 | v8 + aynı taban (karşılaştırma) | 32 (28) / 11 | 27 (23) / 10 |
+| v12 (v8'den 38 sınıf; v9 verisi + 41 denetlenmiş Türk karesi + 1.397 sentetik KGM çizimi; 60 epoch, 31 Ekim gece) | _bekleniyor_ | _bekleniyor_ |
 
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
@@ -187,6 +188,37 @@ eksik yakalama, 3 az yanlış uyarı) ve üstüne yeni sınıflar seslendiriliyo
 videoda ayarlandı ve v8'e de aynı ölçüde yarıyor; 0,7–0,8 arası gerçek levhalar tek karede daha çok kaçıyor (v9'da
 91'de 4). Temiz test .pt 0,884 / 0,719, FP16 tflite 0,889 / 0,715. Yeni sınıflardan keskin viraj dışındakiler
 videolarda hiç denenmedi; telefonda gerçek yol testi şart.
+
+**Tabanın video bazlı etkisi (v9, 30 FPS):** kazanç tek videoya bağlı değil: Ankara–Çorum–İskilip 25/12 → 26/7 (yanlış −5,
+yakalama +1), minibüs hız 40 yanlış −1, Zonguldak kar yanlış −2; öteki 7 video değişmedi. ~10 FPS'te Ankara yanlış 5 → 3,
+minibüs −1. v8'de 30 FPS'te yalnız Ankara (10 → 7), ~10 FPS'te değişiklik yok (`taban_video_bazli.py` dökümü).
+
+**v12 (31 Ekim gece, otomatik zincir `scripts/zincir_v12.ps1`): yeni Türk verisi + resmî çizimlerden sentetik örnekler.**
+Hedef, yanlış uyarıyı kuralla değil modelle düşürmek ve az örnekli yeni sınıfları (yol çalışması 33, sollama yasak 64,
+kaygan yol 66, speed60 82, dik eğim 90 gerçek kutu) güçlendirmek. Üç kaynak, hepsi giriş gerektirmeyen açık lisans
+(`docs/ek_veri_kaynaklari.md`):
+1. **Yeni sürüş kareleri:** Commons E80 klibi (CC BY 3.0) + 3 Pexels otoyol klibi → 158 kare (dördüncü Pexels klibi test
+   videosu `pexels_istanbul` ile aynı çekim çıktı, `test_benzerlik.py` 16×16 imza MSE < 0,15; hariç). v9 ile 0,3 eşiğinde
+   sözde etiket: 47 kare / 55 kutu → her sınıf paftasını iki bağımsız ajan okudu, anlaşmazlık = ret → 39 kare / 40 kutu
+   (sağdan gidiniz 17, diğer 16, sola tehlikeli viraj 7). Çorum şehir merkezi (1,3 GB) ve Çanakkale 1915 videoları
+   Commons'tan inmedi: `upload.wikimedia.org` ~30 MB'da bağlantıyı kesiyor, Range ile sürdürme ~10 KB/sn; bırakıldı.
+2. **Commons levha fotoğrafları:** "Road signs in Turkey" ağacından 112 fotoğraf (CC0 / CC BY / CC BY-SA); v9 yalnız 9'unda
+   levha buldu, denetimden 2 fotoğraf / 4 kutu kaldı (çoğu yön ve şehir tabelası; levha yakın plan ama model küçük
+   levhaya alışık).
+3. **Sentetik kopyala-yapıştır (`scripts/sentetik.py`):** Commons'taki resmî KGM levha çizimleri (SVG → 256 px PNG, 293
+   çizim; 1952 serisi ve "(old)" dışarıda) iki bağımsız ajanla sınıfa eşlendi (yalnız anlaşılanlar; yan yol kavşak
+   varyantları T-22a–e "kavşak"a sayılmadı) → 136 çizim (47 sesli sınıf + 89 diğer) + 5 kendi çizdiğimiz hız diski
+   (30/40/50/60/70; Commons'ta 40 ve 60 sınırı çizimi yok). Her görsele 1–3 çizim: bizim eğitim karelerine (kendi
+   etiketleri korunarak) ve levhasız yeni karelere; yükseklik %4–16, perspektif, ±7° dönüş, parlaklık/doygunluk,
+   bulanıklık, direk, arka plan rengine çekme, gürültü, JPEG kalitesi 60–92; yol kenarı ağırlıklı yerleşim. Sınıf seçimi
+   eksikliğe göre (300 − gerçek kutu): 1.397 görsel / ~2.400 kutu (yol çalışması 197, dik eğim 189, speed60 173, sollama
+   163, kaygan 157, düşen kaya 150, ışıklı işaret 141, devamlı viraj 137, hayvan 125, hız sonu 104, daralan 99, speed40 77,
+   temel sınıflar 20–40'ar, diğer 50).
+Eğitim v9 tarifiyle: v8 best.pt'den 38 sınıf, train_v12 15.859 görsel (train_v11 14.421 + 1.438), val_v11, lr0 0,0003,
+60 epoch. Kapı yeni kuralla v9 kadar iyi: ≥ 31 yakalama, ≤ 11 yanlış uyarı, ≥ 4 yeni sınıf doğru (30 FPS). **Sonuç:
+_bekleniyor_.** Çekince: sentetik levhalar düz çizim, gerçek fotoğraftaki yıpranma/parlama/kirlilik yok; modelin
+"çizim gibi levha" öğrenip gerçeğini kaçırması val'de (gerçek) görülür. CC BY-SA 4.0 çizimlerden türetilen sentetik
+görseller dağıtılmıyor (git dışı).
 
 Yakalama aynı; 30 FPS'te yanlış uyarı azaldı, ~10 FPS'te arttı. "Diğer levha" sınıfı yalnızca Bilecik (14) ve Ankara (1)
 videolarında tespit verdi; öteki 8 videoda ve bizim eğitim görsellerinde hiç. Ayrıntı ve karar: `docs/YOL_HARITASI.md`

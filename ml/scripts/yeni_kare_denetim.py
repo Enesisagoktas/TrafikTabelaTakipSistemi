@@ -11,6 +11,7 @@ Amaç (30 Ekim, v10): farklı şehir/hava Türk kareleri. Model önerir, insan (
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -19,7 +20,8 @@ from PIL import Image, ImageDraw
 from ultralytics import YOLO
 
 DIS = Path(__file__).resolve().parents[1] / "data" / "dis"
-S, COLS, ROWS = 96, 12, 10
+S = int(os.environ.get("PAFTA_HUCRE", 96))  # hücre px; 160 = ajan/ekran okuması için büyük pafta (8 x 6)
+COLS, ROWS = (12, 10) if S <= 96 else (8, 6)
 
 
 def tara(weights, frames, ad, thr=0.35):
