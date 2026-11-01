@@ -159,7 +159,7 @@ python scripts\sinif_sayim.py train_v11.txt sinif_sayim.json                    
 python scripts\sentetik.py scripts\esleme_svg_v12.json data\dis\commons_svg\png data\levha640\train\images,data\dis\arka_plan data\levha640\ek\sentetik 1500 12 sinif_sayim.json
 python scripts\liste_v12.py yeni_videolar commons_levha sentetik                       # train_v12.txt (15.859) + data_v12.yaml (val_v11)
 yolo train model=runs/detect/v8/weights/best.pt data=data/levha640/data_v12.yaml imgsz=640 batch=16 workers=3 optimizer=AdamW lr0=0.0003 lrf=0.05 warmup_epochs=1 warmup_bias_lr=0 epochs=60 patience=60 close_mosaic=10 fliplr=0 mixup=0 cache=False name=v12
-# Zincirin tamamı (eğitim -> temiz test -> 10 video -> kapı >= 31 / <= 11 / >= 4 -> export, APK, commit): scripts\zincir_v12.ps1. Sonuç: bekleniyor (docs/video_testi.md).
+# Zincirin tamamı (eğitim -> temiz test -> 10 video -> kapı >= 31 / <= 11 / >= 4 -> export, APK, commit): scripts\zincir_v12.ps1. Sonuç: 30 FPS 30 (23) / 17, yeni sınıf doğru 18; ~10 FPS 27 (24) / 8; temiz test 0,890 / 0,721. Kapı tutmadı (docs/video_testi.md).
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).

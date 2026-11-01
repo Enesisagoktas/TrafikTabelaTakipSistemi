@@ -97,7 +97,7 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 | v11 (v9'dan sınıf ağırlıklı devam, cls_pw 0,5, yeni sınıflı val; 38 sınıf, 30 epoch) | 31 (27) / 18 (+3 yeni sınıf doğru) | 27 (23) / 9 |
 | **v9 + 5 sınıfta 0,8 güven tabanı (uygulamada, 30 Ekim gece)** | 32 (27) / **11** (+4 yeni sınıf doğru) | 26 (23) / **7** |
 | v8 + aynı taban (karşılaştırma) | 32 (28) / 11 | 27 (23) / 10 |
-| v12 (v8'den 38 sınıf; v9 verisi + 41 denetlenmiş Türk karesi + 1.397 sentetik KGM çizimi; 60 epoch, 31 Ekim gece) | _bekleniyor_ | _bekleniyor_ |
+| v12 (v8'den 38 sınıf; v9 verisi + 41 denetlenmiş Türk karesi + 1.397 sentetik KGM çizimi; 60 epoch, 31 Ekim gece) | 30 (23) / 17 (+18 yeni sınıf doğru) | 27 (24) / 8 (+9) |
 
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
@@ -215,8 +215,15 @@ kaygan yol 66, speed60 82, dik eğim 90 gerçek kutu) güçlendirmek. Üç kayna
    163, kaygan 157, düşen kaya 150, ışıklı işaret 141, devamlı viraj 137, hayvan 125, hız sonu 104, daralan 99, speed40 77,
    temel sınıflar 20–40'ar, diğer 50).
 Eğitim v9 tarifiyle: v8 best.pt'den 38 sınıf, train_v12 15.859 görsel (train_v11 14.421 + 1.438), val_v11, lr0 0,0003,
-60 epoch. Kapı yeni kuralla v9 kadar iyi: ≥ 31 yakalama, ≤ 11 yanlış uyarı, ≥ 4 yeni sınıf doğru (30 FPS). **Sonuç:
-_bekleniyor_.** Çekince: sentetik levhalar düz çizim, gerçek fotoğraftaki yıpranma/parlama/kirlilik yok; modelin
+60 epoch. Kapı yeni kuralla v9 kadar iyi: ≥ 31 yakalama, ≤ 11 yanlış uyarı, ≥ 4 yeni sınıf doğru (30 FPS). **Sonuç (23:34): kapı tutmadı, uygulama v9'da.** 60 epoch (en iyi 44), val_v11 0,830 / 0,715 (yeni sınıflar için ilk
+sızıntısız val sayısı; v11'in 0,85'i v9'un o görselleri eğitimde görmüş olmasındandı), temiz test .pt 0,890 / 0,721 (v9 0,884).
+10 video 30 FPS: 30 (23) / 17, **yeni sınıf doğru 18** (v9 4: keskin viraj 13, sollama yasak 2, devamlı viraj 2, kaygan yol, düşen kaya,
+hayvan); ~10 FPS 27 (24) / 8, yeni sınıf 9 (v9 26 (23) / 7). Sentetik set yeni sınıfları ilk kez gerçekten çalıştırdı. Bedeli:
+Ankara'daki yol çalışması bölgesinin **sarı zeminli 50 levhalarının 5'i kaçtı** (v9 yakalıyordu) ve 13 gerçek yanlış uyarı
+(17'nin 4'ü muhtemelen gerçek uzak levha): uzak/okunmayan üçgenler → sola viraj / speed30 / kavşak, 4,80 m yükseklik sınırı →
+speed40, D durak levhası → demiryolu, yön tabelası → devamlı viraj, şevron → dikkat. Yani model yeni sınıfları öğrendi ama
+"tanıdığı ama uyarmayacağı" levhaları (yükseklik sınırı, yön tabelası, durak, sarı zeminli geçici levhalar) yeterince görmedi:
+sentetikte 89 "diğer" çizime toplam 50 yapıştırma düşmüştü. v13 bunu hedefliyor. Çekince: sentetik levhalar düz çizim, gerçek fotoğraftaki yıpranma/parlama/kirlilik yok; modelin
 "çizim gibi levha" öğrenip gerçeğini kaçırması val'de (gerçek) görülür. CC BY-SA 4.0 çizimlerden türetilen sentetik
 görseller dağıtılmıyor (git dışı).
 
