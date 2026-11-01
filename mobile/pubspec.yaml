@@ -67,6 +67,7 @@ flutter:
   assets:
     - assets/models/
     - assets/sounds/
+    - assets/levhalar/
     - assets/test_images/
 
   # An image asset can refer to one or more resolution-specific "variants", see

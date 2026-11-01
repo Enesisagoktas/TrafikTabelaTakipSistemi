@@ -8,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/foundation.dart' show setEquals;
 
 import 'alerts.dart';
+import 'levha_rehberi.dart';
 import 'event_log.dart';
 import 'model_test.dart';
 
@@ -100,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 NavigationRailDestination(icon: Icon(Icons.directions_car), label: Text('Sürüş')),
                 NavigationRailDestination(icon: Icon(Icons.list_alt), label: Text('Kayıtlar')),
                 NavigationRailDestination(icon: Icon(Icons.fact_check), label: Text('Model testi')),
+                NavigationRailDestination(icon: Icon(Icons.signpost), label: Text('Levhalar')),
                 NavigationRailDestination(icon: Icon(Icons.tune), label: Text('Ayarlar')),
               ],
             ),
@@ -110,6 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 0 => const DriveScreen(),
                 1 => const LogsScreen(),
                 2 => ModelTestScreen(modelPath: kModelPath, useGpu: settings.useGpu),
+                3 => const SignGuideScreen(),
                 _ => const SettingsScreen(),
               },
             ),
@@ -339,7 +342,8 @@ class SettingsScreen extends StatelessWidget {
             title: Text('Veri setleri'),
             subtitle: Text('Hootbu, "Traffic-Sign-Recognition-V2-Turkiye", Roboflow Universe, CC BY 4.0\n'
                 '"trafik levhaları", trafik isaretleri çalışma alanı, Roboflow Universe, CC BY 4.0\n'
-                'DFG Traffic Sign Dataset, Tabernik & Skočaj (2019), ViCoS, CC BY-NC-SA 4.0 (ticari olmayan kullanım)'),
+                'DFG Traffic Sign Dataset, Tabernik & Skočaj (2019), ViCoS, CC BY-NC-SA 4.0 (ticari olmayan kullanım)\n'
+                'Levha çizimleri: Wikimedia Commons, resmî KGM çizimleri (Gigillo83 ve diğerleri), CC BY-SA 4.0 / CC0 / kamu malı'),
           ),
           const ListTile(
             title: Text('Not'),
