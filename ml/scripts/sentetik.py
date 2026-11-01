@@ -32,6 +32,9 @@ def levha_hazirla(png, h_hedef):
     rgb = ImageEnhance.Contrast(rgb).enhance(random.uniform(0.7, 1.1))
     rgb = ImageEnhance.Color(rgb).enhance(random.uniform(0.6, 1.0))
     im = Image.merge("RGBA", (*rgb.split(), im.getchannel("A")))
+    if random.random() < 0.15:  # geçici (yol çalışması) levha: sarı kare zemin
+        kenar = round(max(im.size) * 0.12); sari = Image.new("RGBA", (im.width + 2 * kenar, im.height + 2 * kenar), (247, 208, 40, 255))
+        sari.paste(im, (kenar, kenar), im); im = sari
     im = im.filter(ImageFilter.GaussianBlur(random.uniform(0.2, 0.3 + 0.012 * h)))
     bb = im.getchannel("A").getbbox()
     return im.crop(bb) if bb else im
@@ -46,7 +49,7 @@ def main(esleme, png_dir, bg_dirs, out, adet, tohum=0, sayim_json=None):
             sinif_png.setdefault(c, []).append(Path(png_dir) / f)
     siniflar = sorted(sinif_png)
     sayim = json.load(open(sayim_json, encoding="utf-8")) if sayim_json else {}
-    agirlik = [60 if c == "diger_levha" else (max(30, 300 - sayim.get(c, 0)) if sayim else (3 if c in YENI else 1)) for c in siniflar]
+    agirlik = [600 if c == "diger_levha" else (max(30, 300 - sayim.get(c, 0)) if sayim else (3 if c in YENI else 1)) for c in siniflar]
     print("ağırlık:", dict(zip(siniflar, agirlik)))
     bgs = [p for d in bg_dirs.split(",") for p in Path(d).glob("*.jpg")]
     out = Path(out); (out / "images").mkdir(parents=True, exist_ok=True); (out / "labels").mkdir(exist_ok=True)

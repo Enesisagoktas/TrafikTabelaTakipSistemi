@@ -1,4 +1,4 @@
-# Ek Veri Kaynakları ve Atıf (v12, 31 Ekim 2026)
+# Ek Veri Kaynakları ve Atıf (v12–v13, 31 Ekim – 1 Kasım 2026)
 
 v12 eğitimine giren yeni verinin kaynağı, lisansı ve nasıl ayıklandığı. Kural: giriş gerektirmeyen, açık lisanslı, Türk
 levhası; YouTube yok; tanınmayan küçük yüklemeler yok. Dosyalar `ml/data/dis/` altında, git'e girmez. Wikimedia API'si
@@ -40,7 +40,7 @@ kavşak varyantları "kavşak"a sayılmadı. Kullanılan 136 çizim: CC BY-SA 4.
 มองโกเลีย๔๔ (18), Jelican9 (10), Kingwarnen (2), Kurmanbek (2). 40 ve 60 hız sınırı çizimi Commons'ta yok: 30/40/50/60/70 diskleri
 PIL ile çizildi (`uretilen_hiz_*.png`, bizim).
 
-Sentetik görseller (`scripts/sentetik.py`, `ml/data/levha640/ek/sentetik/`, 1.397 görsel) bizim eğitim karelerine ve levhasız yeni
+Sentetik görseller (`scripts/sentetik.py`, `ml/data/levha640/ek/sentetik/`, v12 1.397 + v13 945 = 2.342 görsel; v13'te "diğer" çizimleri 10 kat ağır ve %15'i sarı zeminli) bizim eğitim karelerine ve levhasız yeni
 karelere yapıştırmayla üretildi; CC BY-SA 4.0 çizimlerden türetildikleri için **dağıtılmıyor** (git dışı). Model ağırlıkları için
 atıf: yukarıdaki yazarlar, Wikimedia Commons, CC BY-SA 4.0.
 

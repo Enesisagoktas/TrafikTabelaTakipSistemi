@@ -98,6 +98,7 @@ Aynı 10 video, aynı kurallar (güven 0,7, boy ≥ %5, 5 karenin 3'ü), aynı 1
 | **v9 + 5 sınıfta 0,8 güven tabanı (uygulamada, 30 Ekim gece)** | 32 (27) / **11** (+4 yeni sınıf doğru) | 26 (23) / **7** |
 | v8 + aynı taban (karşılaştırma) | 32 (28) / 11 | 27 (23) / 10 |
 | v12 (v8'den 38 sınıf; v9 verisi + 41 denetlenmiş Türk karesi + 1.397 sentetik KGM çizimi; 60 epoch, 31 Ekim gece) | 30 (23) / 17 (+18 yeni sınıf doğru) | 27 (24) / 8 (+9) |
+| v13 (v12 + "diğer" çizimleri 10 kat ve %15 sarı zeminli sentetik; 2.342 sentetik, 60 epoch, 1 Kasım) | 31 (26) / 14 (+15 yeni sınıf doğru) | 28 (22) / **5** (+11) |
 
 v7 (30 Ekim gecesi) daha kötü: yakalama düştü, yanlış uyarı arttı; 8 yeni sınıfın hiçbiri 10 videoda 0,5 güvenle tek
 tespit vermedi (tek kaynak: Erzurum seti). Uygulamada v6 kaldı.
@@ -223,9 +224,25 @@ Ankara'daki yol çalışması bölgesinin **sarı zeminli 50 levhalarının 5'i 
 (17'nin 4'ü muhtemelen gerçek uzak levha): uzak/okunmayan üçgenler → sola viraj / speed30 / kavşak, 4,80 m yükseklik sınırı →
 speed40, D durak levhası → demiryolu, yön tabelası → devamlı viraj, şevron → dikkat. Yani model yeni sınıfları öğrendi ama
 "tanıdığı ama uyarmayacağı" levhaları (yükseklik sınırı, yön tabelası, durak, sarı zeminli geçici levhalar) yeterince görmedi:
-sentetikte 89 "diğer" çizime toplam 50 yapıştırma düşmüştü. v13 bunu hedefliyor. Çekince: sentetik levhalar düz çizim, gerçek fotoğraftaki yıpranma/parlama/kirlilik yok; modelin
+sentetikte 89 "diğer" çizime toplam 50 yapıştırma düşmüştü. v13 bunu hedefledi (aşağıda). Çekince: sentetik levhalar düz çizim, gerçek fotoğraftaki yıpranma/parlama/kirlilik yok; modelin
 "çizim gibi levha" öğrenip gerçeğini kaçırması val'de (gerçek) görülür. CC BY-SA 4.0 çizimlerden türetilen sentetik
 görseller dağıtılmıyor (git dışı).
+
+**v13 (1 Kasım, otomatik zincir `scripts/zincir_v13.ps1`): v12 + "diğer levha" çizimleri 10 kat, %15 sarı zemin.**
+Tek değişiklik sentetik set: 89 "diğer" çiziminin ağırlığı 60 → 600 (yapıştırma 50 → ~630: yükseklik sınırı, yön tabelası,
+durak, bilgi levhaları) ve her yapıştırmanın %15'i sarı kare zemine (geçici yol çalışması levhası) oturtuldu; +945 görsel,
+toplam 2.342 sentetik, train_v13 16.804. Eğitim aynı tarif (v8'den 38 sınıf, 60 epoch; en iyi 47), val_v11 0,829 / 0,715,
+temiz test .pt 0,885 / 0,717. **Sonuç (13:53): kapı yine tutmadı, uygulama v9'da.** 30 FPS 31 (26) / 14, yeni sınıf doğru 15;
+~10 FPS 28 (22) / 5, yeni sınıf 11 (~10 FPS'teki en düşük yanlış uyarı; v9 7). v12'ye göre: "diğer" karışmaları bitti (4,80 m →
+speed40, D durak → demiryolu, yön tabelası → devamlı viraj, reklam panosu → kavşak artık yok), yanlış uyarı 17 → 14, yakalama
+30 → 31. Kalan 12 gerçek yanlış uyarının 7'si **uzaktaki okunmayan üçgenler** (sola viraj / speed30 / kavşak / sağa viraj
+dendi; hepsi 0,8 güvenin üstünde, 5 sınıf tabanı etkilemiyor), 3'ü şevron (dikkat / devamlı viraj / sola viraj), 3'ü yeni
+sınıflar arası (S viraj → kavşak, sollama yasak → speed30, hayvan → okul geçidi). Ankara'nın **sarı zeminli 50'lerinin 6'sı yine
+kaçtı**: sentetik sarı kare, gerçekteki büyük sarı pano + yazı düzenine benzemiyor. Yorum: temiz çizimlerle beslenen model üçgen
+biçimine fazla güveniyor; 42 olaylı kapıda 2–3'lük farklar gürültü sınırında, sağlam sinyaller yeni sınıfların çalışması (15–18'e
+karşı 4) ve sarı 50 kaybı. Olası v14: uzak/bulanık küçük üçgenleri sentetikte "diğer" olarak etiketlemek (okunmuyorsa sınıf
+verme), sarı panoyu gerçeğe benzetmek (pano + 50 diski + yazı), ya da v13 modelini üçgen sınıflarda daha yüksek kutu boyu
+kuralıyla denemek (`analiz.py kurallar`a yeni varyant).
 
 Yakalama aynı; 30 FPS'te yanlış uyarı azaldı, ~10 FPS'te arttı. "Diğer levha" sınıfı yalnızca Bilecik (14) ve Ankara (1)
 videolarında tespit verdi; öteki 8 videoda ve bizim eğitim görsellerinde hiç. Ayrıntı ve karar: `docs/YOL_HARITASI.md`
