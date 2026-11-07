@@ -42,6 +42,20 @@ def phash(path):
         return int(str(imagehash.phash(im)), 16)
 
 
+YAYA = "YAYA_RENK"  # eşleme hedefi: mavi kare (bilgi) mi kırmızı üçgen (uyarı) mı, kutunun alt ortasındaki renkten
+
+
+def yaya_sinifi(im, b, ours):
+    """Yaya geçidi kutusu: içinde kırmızı kenar varsa üçgen uyarı levhası (pedestrian_risk), yoksa mavi kare
+    (pedestrian_info). Mavi ile karar verilmiyor: üçgenin köşelerindeki gökyüzü de mavi. Oran eşiği, karanlık karede de çalışsın."""
+    H, W = im.shape[:2]
+    x, y, w, h = b
+    x1, x2, y1, y2 = int((x - w / 2) * W), int((x + w / 2) * W), int((y - h / 2) * H), int((y + h / 2) * H)
+    bb, g, r = (im[max(y1, 0):max(y2, y1 + 1), max(x1, 0):max(x2, x1 + 1)].astype(int)[..., i] for i in range(3))
+    kirmizi = ((r > bb * 1.3 + 10) & (r > g * 1.3 + 10)).mean()
+    return ours.index("pedestrian_risk" if kirmizi > 0.05 else "pedestrian_info")
+
+
 def min_dist(h, arr):
     x = np.bitwise_xor(arr, np.uint64(h))
     return int(np.unpackbits(x.view(np.uint8).reshape(-1, 8), axis=1).sum(axis=1).min())
@@ -89,20 +103,24 @@ def main():
     ap.add_argument("--diger", action="store_true")
     ap.add_argument("--ek-siniflar", default="")
     ap.add_argument("--yaml", default=None)
+    ap.add_argument("--siniflar", default=None, help="sınıf listesi bu yaml'dan (ör. data_v14.yaml); liste yeniden yazılmaz")
     a = ap.parse_args()
 
-    ours = yaml.safe_load((DATA / "data.yaml").read_text(encoding="utf-8"))["names"]
-    ours = ours + [s for s in a.ek_siniflar.split(",") if s]
-    if a.diger:
-        ours = ours + ["diger_levha"]
+    if a.siniflar:
+        ours = yaml.safe_load((DATA / a.siniflar).read_text(encoding="utf-8"))["names"]
+    else:
+        ours = yaml.safe_load((DATA / "data.yaml").read_text(encoding="utf-8"))["names"]
+        ours = ours + [s for s in a.ek_siniflar.split(",") if s]
+        if a.diger:
+            ours = ours + ["diger_levha"]
     if a.ek_siniflar and not a.yaml:
         a.yaml = "data_v7.yaml"
     src_names = names_of(a.kaynak)
     mapping = json.loads(a.esleme.read_text(encoding="utf-8-sig"))  # Windows'ta yazılan dosyada BOM olabilir
-    bad = [k for k, v in mapping.items() if k not in src_names or v not in ours]
+    bad = [k for k, v in mapping.items() if k not in src_names or (v not in ours and v != YAYA)]
     if bad:
         raise SystemExit(f"eşlemede bilinmeyen sınıf: {bad}")
-    to_ours = {src_names.index(k): ours.index(v) for k, v in mapping.items()}
+    to_ours = {src_names.index(k): (YAYA if v == YAYA else ours.index(v)) for k, v in mapping.items()}
     skip = {src_names.index(s) for s in a.atla.split(",") if s}
     drop = {src_names.index(s) for s in a.at.split(",") if s}
     if a.diger:
@@ -135,6 +153,8 @@ def main():
             stats["train_kopyasi"] += 1
             continue
         im = cv2.imread(str(img))
+        if any(c == YAYA for c, *_ in kept):
+            kept = [(yaya_sinifi(im, b, ours) if c == YAYA else c, *b) for c, *b in kept]
         r = SIZE / max(im.shape[:2])
         if r < 1:
             im = cv2.resize(im, (round(im.shape[1] * r), round(im.shape[0] * r)), interpolation=cv2.INTER_AREA)
@@ -146,7 +166,8 @@ def main():
         for c, *_ in kept:
             per_class[ours[c]] = per_class.get(ours[c], 0) + 1
     print(json.dumps({"ad": a.ad, **stats, "sinif_kutu": dict(sorted(per_class.items()))}, ensure_ascii=False))
-    print("train_birlesik.txt satır:", rebuild_list(ours, a.yaml))
+    if not a.siniflar:
+        print("train_birlesik.txt satır:", rebuild_list(ours, a.yaml))
 
 
 if __name__ == "__main__":

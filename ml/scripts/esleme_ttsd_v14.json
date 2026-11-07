@@ -1,0 +1,12 @@
+{
+ "Yaya Gecidi": "YAYA_RENK",
+ "30 Km Hiz Siniri": "speed30",
+ "50 Km Hiz Siniri": "speed50",
+ "70 Km Hiz Siniri": "speed70",
+ "Trafikisiklari": "isikli_isaret",
+ "Sagdan Git": "keepright",
+ "Ana Yol Tali Yol": "crossroads",
+ "Yol Ver": "giveway",
+ "Kasisli Yol": "kasis",
+ "ileri ve Sola Mecburi Don": "ileri_sola"
+}

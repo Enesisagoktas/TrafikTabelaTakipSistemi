@@ -44,6 +44,18 @@ Sentetik görseller (`scripts/sentetik.py`, `ml/data/levha640/ek/sentetik/`, v12
 karelere yapıştırmayla üretildi; CC BY-SA 4.0 çizimlerden türetildikleri için **dağıtılmıyor** (git dışı). Model ağırlıkları için
 atıf: yukarıdaki yazarlar, Wikimedia Commons, CC BY-SA 4.0.
 
+## 4. v14 (7 Kasım): doğrulanmış Türk setleri (`docs/kaggle_egitimi.md`)
+
+7 Kasım taraması (29 Ekim taramasının üstüne; Kaggle'ın girişsiz liste API'si, Hugging Face, Roboflow, GitHub): daha önce
+kullanılmamış ve kanıtı olan setler.
+- **TTSD / NAVIGATR** (Karabük Üniv., yayımlanmış makale): GitHub'dan indi, `ml/data/dis/ttsd_navigatr/`. Yalnız test bölümü
+  görselli: 1.620 foto, 2.064 kutu, 10 sınıf. Lisans yazılı değil, akademik kullanım + atıf. Çoğu yakın plan telefon fotoğrafı.
+- **Traffic Signs in Türkiye** (Kaggle, nezahatkk): 390 indirme, 20 oy, Apache 2.0; Kaggle'da deftere eklenir, indirilmedi.
+- **Roboflow** (CC BY 4.0, kullanıcının hesabı/anahtarı gerekir): Hootbu 17 sınıf, Hootbu "Traffic Sign Recognition 2", ETÜ.
+- Kullanılmayanlar: TTVS (İTÜ, 33.764 görsel / 108 sınıf; 500 etiketli görsel katkısı ve e-posta şartı), TraffiSign-Turk (IEEE
+  Access 2026; yazarlar paylaşmıyor), TTSRB (Kaggle 8,6 GB, 7 indirme, lisans belirsiz), "Traffic Sign Images From Turkey"
+  (Kaggle, 1.153 indirme ama sınıflandırma kırpıntısı ve lisans belirsiz), Denizli BB 275 sınıf (sürümleri kırpıntı).
+
 ## Alınan dersler
 - Wikimedia: User-Agent'ta iletişim adresi olmadan ve eş zamanlı isteklerle 429 yağıyor; tek sıra + 5 sn + Retry-After ile düzeldi, ama
   `upload.wikimedia.org` bu akşam büyük dosyalarda ~30 MB'da bağlantıyı kesti ve fotoğraflarda okuma zaman aşımı verdi.

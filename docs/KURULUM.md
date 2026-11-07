@@ -164,6 +164,17 @@ yolo train model=runs/detect/v8/weights/best.pt data=data/levha640/data_v12.yaml
 #   Aynı sentetik.py komutu tohum 13 ile (+945 görsel, ek\sentetik toplam 2.342); train_v13.txt = train_v12.txt + yeni sentetik satırlar (16.804);
 #   data_v13.yaml = data_v12.yaml (train: train_v13.txt). Zincir: scripts\zincir_v13.ps1 (name=v13).
 #   Sonuç: 30 FPS 31 (26) / 14, yeni sınıf doğru 15; ~10 FPS 28 (22) / 5; temiz test 0,885 / 0,717. Kapı tutmadı (docs/video_testi.md).
+# v14 (7 Kasım, eğitim Kaggle'da; ayrıntı docs/kaggle_egitimi.md): 46 sınıf = v13'ün 38'i + 8 yeni (data_v14.yaml).
+#   data_v14.yaml = data_v13 adları + speed20, park_yasak, park_yeri, ileri_mecburi, saga_mecburi, sola_mecburi, ileri_saga, ileri_sola
+#   (diger_levha 37'de kalır); train: train_v14.txt, val: val_v14.txt. Eşlemeler: scripts\esleme_{dfg,trafik_levhalari,ttsd}_v14.json.
+python scripts\voc_yolo.py data\dis\ttsd_navigatr\repo\test data\dis\ttsd_yolo                      # TTSD (VOC) -> YOLO, EXIF yönü uygulanır
+python scripts\ek_veri.py data\dis\ttsd_yolo ttsd scripts\esleme_ttsd_v14.json --siniflar data_v14.yaml
+python scripts\ek_veri.py data\dis\trafik_levhalari trafik_levhalari_v14 scripts\esleme_trafik_levhalari_v14.json --diger --siniflar data_v14.yaml
+python scripts\ek_veri.py data\dis\dfg\stage dfg_v14 scripts\esleme_dfg_v14.json --atla "III-29-30,III-29-40,III-30-30" --diger --siniflar data_v14.yaml
+#   train_v14.txt = train_v13.txt (ek/dfg -> ek/dfg_v14, ek/trafik_levhalari -> ek/trafik_levhalari_v14) + ek/ttsd (18.421); val_v14.txt aynı değişimle.
+python scripts\oto_esleme.py                                                                       # kural eşleyicinin öz denetimi
+python kaggle\paket_yap.py                                                                         # data\kaggle_yukle\trafik_levha_v14_kaggle.zip
+python kaggle\defter_yap.py                                                                        # kaggle\egitim.py -> kaggle\egitim.ipynb
 ```
 - `--atla` virgüllü listesi PowerShell'de tırnak içinde yazılır, yoksa PowerShell listeyi böler.
 - ⚠️ Eğitim sürerken **başka ağır Python işi** (dışa aktarma, ikinci bir eğitim) çalıştırma: Windows'un sanal bellek sınırı (RAM + disk belleği dosyası) aşılıyor ve eğitim `ArrayMemoryError` ile çöküyor (29 Ekim'de v5'te yaşandı). APK derlemesinden sonra kalan Gradle sürecini de kapat (`mobile\android\gradlew --stop`).
