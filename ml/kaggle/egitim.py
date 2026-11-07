@@ -16,6 +16,7 @@
 import json
 import os
 import random
+import re
 import shutil
 import subprocess
 import sys
@@ -34,7 +35,12 @@ KAGGLE = Path("/kaggle/input").exists()
 GIRDI = Path("/kaggle/input") if KAGGLE else Path(os.environ["YEREL_GIRDI"])
 IS = Path("/kaggle/working") if KAGGLE else Path(os.environ["YEREL_CALISMA"])
 IS.mkdir(parents=True, exist_ok=True)
-PAKET = next(GIRDI.rglob("data_v14.yaml")).parents[2]  # .../ml (bizim yüklediğimiz paket)
+# Bizim paket: tam olarak .../ml/data/levha640/data_v14.yaml. Paketin betikleri ve ağırlığı çalıştırılacağı için başka bir
+# girdi setinde aynı yapı varsa durulur (yanlış kodu yüklememek için).
+adaylar = [p for p in GIRDI.rglob("data_v14.yaml") if p.parent.name == "levha640" and p.parents[2].name == "ml"]
+if len(adaylar) != 1:
+    raise SystemExit(f"bizim paket tek olmalı, bulunan: {adaylar}")
+PAKET = adaylar[0].parents[2]  # .../ml
 print("paket:", PAKET)
 
 # %%
@@ -152,8 +158,9 @@ if RF_KEY:
         try:
             ds = rf.workspace(ws).project(proj).version(ver).download("yolov11", location=str(IS / "rf" / proj))
             KAYNAKLAR.append((norm(proj)[:40], Path(ds.location)))
-        except Exception as e:  # anahtar yazdırılmaz; yalnız hata türü
-            print("Roboflow indirilemedi:", proj, type(e).__name__, str(e)[:200])
+        except Exception as e:  # hata metni adres içerebilir: anahtar maskelenir
+            msj = re.sub(r"api_key=[^&\s'\"]+", "api_key=***", str(e).replace(RF_KEY, "***"))
+            print("Roboflow indirilemedi:", proj, type(e).__name__, msj[:200])
 else:
     print("ROBOFLOW_API_KEY yok: Roboflow setleri atlandı")
 
